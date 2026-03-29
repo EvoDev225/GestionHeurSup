@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import SidebarRH from '../SidebarRH';
-import Navbar from '../Navbar';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,6 +27,8 @@ import {
   MdArrowDownward,
   MdSearchOff
 } from 'react-icons/md';
+import SidebarRH from './SidebarRH';
+import Navbar from '../Navbar';
 
 // Enregistrement Chart.js
 ChartJS.register(
