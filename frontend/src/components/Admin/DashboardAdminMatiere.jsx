@@ -91,18 +91,16 @@ const DashboardAdminMatiere = () => {
   const getInitials = (name) => name ? name.split(" ").map(n => n[0]).join("").toUpperCase() : "??";
 
   return (
-    <div className="min-h-screen bg-[#000814] flex">
+    <div className="min-h-screen bg-[#000814]">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col min-h-screen">
-        <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} userName="John Smith" userRole="Administrateur" />
+      <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} userName="John Smith" userRole="Administrateur" />
 
-        <motion.main 
-          initial="hidden" animate="visible" variants={containerVariants}
-          className="mt-16 text-white md:ml-57.5 transition-all duration-300 p-4 md:p-6"
-        >
-          {/* KPI CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <motion.main 
+        initial="hidden" animate="visible" variants={containerVariants}
+        className="mt-16 text-white md:ml-57.5 transition-all duration-300 min-h-[calc(100vh-64px)] p-4 md:p-6"
+      >
+        {/* KPI CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
               <div className="flex items-center justify-between mb-2">
                 <MdAccountTree className="text-2xl text-[#0097FB]" />
@@ -129,13 +127,13 @@ const DashboardAdminMatiere = () => {
               <h3 className="text-3xl font-bold">{countSansEnseignant}</h3>
               <p className="text-[#7A8FAD] text-[12px] mt-1">Sans enseignant attribué</p>
             </div>
-          </div>
+        </div>
 
-          {/* TABLE SECTION */}
-          <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 rounded-xl p-5 mt-6 relative">
-            <div className="flex items-center justify-between mb-4">
+        {/* TABLE SECTION */}
+        <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 rounded-xl p-4 md:p-6 mt-6 relative">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h2 className="text-lg font-bold">Liste des matières</h2>
-              <button className="bg-[#0097FB] hover:opacity-85 text-white rounded-lg px-4 py-2 text-[13px] flex items-center gap-2 transition-all">
+              <button className="bg-[#0097FB] hover:opacity-85 text-white rounded-lg px-4 py-2.5 text-[13px] flex items-center justify-center gap-2 transition-all w-full sm:w-auto">
                 <MdAdd className="text-lg" />
                 <span className="hidden sm:inline">Ajouter une matière</span>
               </button>
@@ -143,7 +141,7 @@ const DashboardAdminMatiere = () => {
 
             {/* FILTERS */}
             <div className="flex flex-wrap gap-3 mb-4">
-              <div className="relative flex-1 min-w-[200px]">
+              <div className="relative flex-1 min-w-full lg:min-w-[200px]">
                 <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A8FAD] text-xl" />
                 <input 
                   type="text" placeholder="Rechercher une matière, une filière..."
@@ -151,13 +149,13 @@ const DashboardAdminMatiere = () => {
                   className="w-full bg-white/[0.04] border border-white/10 rounded-lg py-2 pl-10 pr-4 text-[13px] outline-none focus:border-[#0097FB] transition-all"
                 />
               </div>
-              <select value={selectedFiliere} onChange={(e) => setSelectedFiliere(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] min-w-[180px] outline-none cursor-pointer">
+              <select value={selectedFiliere} onChange={(e) => setSelectedFiliere(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] flex-1 min-w-[140px] outline-none cursor-pointer">
                 {filieres.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
-              <select value={selectedNiveau} onChange={(e) => setSelectedNiveau(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] outline-none cursor-pointer">
+              <select value={selectedNiveau} onChange={(e) => setSelectedNiveau(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] flex-1 min-w-[140px] outline-none cursor-pointer">
                 {niveaux.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
-              <select value={selectedStatut} onChange={(e) => setSelectedStatut(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] outline-none cursor-pointer">
+              <select value={selectedStatut} onChange={(e) => setSelectedStatut(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] flex-1 min-w-[140px] outline-none cursor-pointer">
                 {statuts.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
@@ -225,9 +223,8 @@ const DashboardAdminMatiere = () => {
                 </tbody>
               </table>
             </div>
-          </motion.div>
-        </motion.main>
-      </div>
+        </motion.div>
+      </motion.main>
 
       {/* CONTEXTUAL MODAL */}
       <AnimatePresence>
