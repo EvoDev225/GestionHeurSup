@@ -6,9 +6,10 @@ import DashboardAdminUser from "./components/Admin/DashboardAdminUser.jsx";
 import DashboardAdminMatiere from "./components/Admin/DashboardAdminMatiere.jsx";
 import DashboardAdminParametres from "./components/Admin/DashboardAdminParametres.jsx";
 import DashboardAdminExports from "./components/Admin/DashboardAdminExports.jsx";
-import SidebarRH from "./components/SidebarRH.jsx";
+import SidebarRH from "./components/RH/SidebarRH.jsx";
 import Navbar from "./components/Navbar.jsx";
 import { MdConstruction } from "react-icons/md";
+import DashboardRH from "./components/RH/DashboardRH.jsx";
 
 const RHPlaceholder = ({ title }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +39,7 @@ function App() {
           <Route path="/dashboard-admin-export" element={<DashboardAdminExports />} />
           
           {/* Routes RH */}
-          <Route path="/rh/dashboard" element={<RHPlaceholder title="Dashboard RH" />} />
+          <Route path="/rh/dashboard" element={<DashboardRH />} />
           <Route path="/rh/heures" element={<RHPlaceholder title="Saisie des heures" />} />
           <Route path="/rh/statistiques" element={<RHPlaceholder title="Statistiques" />} />
           <Route path="/rh/paiements" element={<RHPlaceholder title="États de paiement" />} />

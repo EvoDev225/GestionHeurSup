@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '../Navbar.jsx';
 import DashboardMain from './DashboardMain.jsx';
-import SidebarAdmin from '../SidebarAdmin.jsx';
+import SidebarAdmin from './SidebarAdmin.jsx';
 
 const Dashboard = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import SidebarAdmin from "../SidebarAdmin.jsx";
+import SidebarAdmin from "./SidebarAdmin.jsx";
 import Navbar from "../Navbar.jsx";
 import { 
   MdCalendarToday, 
