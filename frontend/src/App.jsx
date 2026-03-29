@@ -10,6 +10,7 @@ import SidebarRH from "./components/RH/SidebarRH.jsx";
 import Navbar from "./components/Navbar.jsx";
 import { MdConstruction } from "react-icons/md";
 import DashboardRH from "./components/RH/DashboardRH.jsx";
+import DashboardRhSaisie from "./components/RH/DashboardRhSaisie.jsx";
 
 const RHPlaceholder = ({ title }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +41,7 @@ function App() {
           
           {/* Routes RH */}
           <Route path="/rh/dashboard" element={<DashboardRH />} />
-          <Route path="/rh/heures" element={<RHPlaceholder title="Saisie des heures" />} />
+          <Route path="/rh/heures" element={<DashboardRhSaisie/>} />
           <Route path="/rh/statistiques" element={<RHPlaceholder title="Statistiques" />} />
           <Route path="/rh/paiements" element={<RHPlaceholder title="États de paiement" />} />
         </Routes>
