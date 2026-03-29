@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Sidebar from "../Sidebar.jsx";
+import SidebarAdmin from "../SidebarAdmin.jsx";
 import Navbar from "../Navbar.jsx";
 import { 
   MdPeople, 
@@ -92,7 +92,7 @@ const DashboardAdminUser = () => {
 
   return (
     <div className="min-h-screen bg-[#000814]">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <SidebarAdmin isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />
       <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
 
       <motion.main 
