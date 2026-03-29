@@ -15,7 +15,7 @@ const navItems = [
   { label: "Utilisateurs", path: "/dashboard-admin-user", icon: MdPeople },
   { label: "Matières", path: "/dashboard-admin-matiere", icon: MdBook },
   { label: "Paramètres", path: "/dashboard-admin-parametres", icon: MdSettings },
-  { label: "Exports & Documents", path: "/exports", icon: MdDescription },
+  { label: "Exports & Documents", path: "/dashboard-admin-export", icon: MdDescription },
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {

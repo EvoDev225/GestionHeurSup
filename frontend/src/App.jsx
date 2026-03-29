@@ -4,6 +4,7 @@ import Dashboard from "./components/Admin/Dashboard.jsx"
 import DashboardAdminUser from "./components/Admin/DashboardAdminUser.jsx";
 import DashboardAdminMatiere from "./components/Admin/DashboardAdminMatiere.jsx";
 import DashboardAdminParametres from "./components/Admin/DashboardAdminParametres.jsx";
+import DashboardAdminExports from "./components/Admin/DashboardAdminExports.jsx";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/dashboard-admin-user" element={<DashboardAdminUser />} />
           <Route path="/dashboard-admin-matiere" element={<DashboardAdminMatiere />} />
           <Route path="/dashboard-admin-parametres" element={<DashboardAdminParametres />} />
+          <Route path="/dashboard-admin-export" element={<DashboardAdminExports />} />
         </Routes>
       </BrowserRouter>
     </div>
