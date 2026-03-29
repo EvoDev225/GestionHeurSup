@@ -13,8 +13,8 @@ import {
 const navItems = [
   { label: "Tableau de bord", path: "/dashboard-admin", icon: MdDashboard },
   { label: "Utilisateurs", path: "/dashboard-admin-user", icon: MdPeople },
-  { label: "Matières", path: "/matieres", icon: MdBook },
-  { label: "Paramètres", path: "/parametres", icon: MdSettings },
+  { label: "Matières", path: "/dashboard-admin-matiere", icon: MdBook },
+  { label: "Paramètres", path: "/dashboard-admin-parametres", icon: MdSettings },
   { label: "Exports & Documents", path: "/exports", icon: MdDescription },
 ];
 
