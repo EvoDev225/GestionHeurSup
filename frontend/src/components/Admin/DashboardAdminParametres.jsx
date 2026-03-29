@@ -85,21 +85,19 @@ const DashboardAdminParametres = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#000814] flex">
+    <div className="min-h-screen bg-[#000814]">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col min-h-screen">
-        <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} userName="John Smith" userRole="Administrateur" />
+      <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} userName="John Smith" userRole="Administrateur" />
 
-        <motion.main 
-          initial="hidden" animate="visible" variants={containerVariants}
-          className="mt-16 text-white md:ml-57.5 transition-all duration-300 p-4 md:p-6"
-        >
-          <h1 className="text-[26px] font-bold mb-7">Paramètres</h1>
+      <motion.main 
+        initial="hidden" animate="visible" variants={containerVariants}
+        className="mt-16 text-white md:ml-57.5 transition-all duration-300 min-h-[calc(100vh-64px)] p-4 md:p-6"
+      >
+        <h1 className="text-[26px] font-bold mb-7">Paramètres</h1>
 
-          {/* SECTION 1 — ANNÉE ACADÉMIQUE */}
-          <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 p-7 rounded-[14px] mb-6 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
+        {/* SECTION 1 — ANNÉE ACADÉMIQUE */}
+        <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 p-5 md:p-7 rounded-[14px] mb-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
               <div className="flex items-center gap-2.5">
                 <MdCalendarToday className="text-[#0097FB] text-xl" />
                 <h2 className="text-[17px] font-semibold">Année académique</h2>
@@ -114,36 +112,36 @@ const DashboardAdminParametres = () => {
 
             <p className="text-[#7A8FAD] text-[13px] mb-6">Définissez la période de l'année académique en cours.</p>
 
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-end">
+              <div className="flex flex-col gap-1.5 w-full sm:w-auto">
                 <label className="text-[#7A8FAD] text-[12px] font-medium">Année de début</label>
                 <div className="relative flex items-center">
                   <MdCalendarToday className="absolute left-3 text-[#7A8FAD] text-[16px]" />
                   <input 
                     type="text" placeholder="2025"
                     value={anneeDebut} onChange={e => setAnneeDebut(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-[140px] outline-none focus:border-[#0097FB] transition-colors"
+                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-full sm:w-[140px] outline-none focus:border-[#0097FB] transition-colors"
                   />
                 </div>
               </div>
 
               <MdArrowForward className="text-[#7A8FAD] text-xl mb-3 self-center hidden sm:block" />
 
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 w-full sm:w-auto">
                 <label className="text-[#7A8FAD] text-[12px] font-medium">Année de fin</label>
                 <div className="relative flex items-center">
                   <MdCalendarToday className="absolute left-3 text-[#7A8FAD] text-[16px]" />
                   <input 
                     type="text" placeholder="2026"
                     value={anneeFin} onChange={e => setAnneeFin(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-[140px] outline-none focus:border-[#0097FB] transition-colors"
+                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-full sm:w-[140px] outline-none focus:border-[#0097FB] transition-colors"
                   />
                 </div>
               </div>
 
               <button 
                 onClick={handleSaveAnnee}
-                className="bg-[#0097FB] hover:opacity-85 text-white rounded-[9px] px-5 py-2.5 text-[14px] font-medium flex items-center gap-2 transition-all"
+                className="bg-[#0097FB] hover:opacity-85 text-white rounded-[9px] px-5 py-2.5 text-[14px] font-medium flex items-center justify-center gap-2 transition-all w-full sm:w-auto"
               >
                 <MdSave size={18} />
                 Enregistrer
@@ -156,11 +154,11 @@ const DashboardAdminParametres = () => {
                 <span>L'année académique en cours est : <strong className="text-white">{anneeEnregistree.debut} – {anneeEnregistree.fin}</strong></span>
               </div>
             )}
-          </motion.div>
+        </motion.div>
 
-          {/* SECTION 2 — ÉQUIVALENCES DES HEURES */}
-          <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 p-7 rounded-[14px] mb-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
+        {/* SECTION 2 — ÉQUIVALENCES DES HEURES */}
+        <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 p-5 md:p-7 rounded-[14px] mb-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
               <div className="flex items-center gap-2.5">
                 <MdSwapHoriz className="text-[#0097FB] text-xl" />
                 <h2 className="text-[17px] font-semibold">Équivalence des heures</h2>
@@ -189,7 +187,7 @@ const DashboardAdminParametres = () => {
             <p className="text-[#7A8FAD] text-[13px] mb-6">Définissez les coefficients de conversion entre les types d'heures.</p>
 
             {/* Explication visuelle */}
-            <div className="flex flex-wrap gap-4 mb-7">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-7">
               {equivalences.filter(e => e.type !== "CM").map(eq => (
                 <div key={eq.id} className="bg-[#0097FB]/5 border border-[#0097FB]/10 p-4 rounded-xl flex-1 min-w-[200px]">
                   <div className="flex items-center gap-3">
@@ -251,11 +249,11 @@ const DashboardAdminParametres = () => {
                 </tbody>
               </table>
             </div>
-          </motion.div>
+        </motion.div>
 
-          {/* SECTION 3 — RÉCAPITULATIF */}
-          <motion.div variants={itemVariants} className="bg-[#0097FB]/[0.03] border border-[#0097FB]/10 p-7 rounded-[14px] shadow-sm">
-            <div className="flex items-center gap-2.5 mb-5">
+        {/* SECTION 3 — RÉCAPITULATIF */}
+        <motion.div variants={itemVariants} className="bg-[#0097FB]/[0.03] border border-[#0097FB]/10 p-5 md:p-7 rounded-[14px] shadow-sm">
+            <div className="flex items-center gap-2.5 mb-6">
               <MdInfo className="text-[#0097FB] text-xl" />
               <h2 className="text-[17px] font-semibold">Récapitulatif de configuration</h2>
             </div>
@@ -274,7 +272,7 @@ const DashboardAdminParametres = () => {
 
               <div>
                 <label className="text-[#7A8FAD] text-[11px] uppercase font-bold tracking-wider">Coefficients actifs</label>
-                <div className="flex gap-3 mt-2">
+                <div className="flex flex-wrap gap-3 mt-2">
                   {equivalences.map(eq => (
                     <div key={eq.type} className={`px-2.5 py-1 rounded text-[12px] font-bold ${
                       eq.type === "CM" ? "bg-[#0097FB]/15 text-[#0097FB]" :
@@ -287,9 +285,8 @@ const DashboardAdminParametres = () => {
                 </div>
               </div>
             </div>
-          </motion.div>
-        </motion.main>
-      </div>
+        </motion.div>
+      </motion.main>
 
       {/* TOAST NOTIFICATION */}
       <AnimatePresence>
