@@ -120,7 +120,7 @@ const DashboardAdminParametres = () => {
                   <input 
                     type="text" placeholder="2025"
                     value={anneeDebut} onChange={e => setAnneeDebut(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-full sm:w-[140px] outline-none focus:border-[#0097FB] transition-colors"
+                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-full sm:w-35 outline-none focus:border-[#0097FB] transition-colors"
                   />
                 </div>
               </div>
@@ -134,7 +134,7 @@ const DashboardAdminParametres = () => {
                   <input 
                     type="text" placeholder="2026"
                     value={anneeFin} onChange={e => setAnneeFin(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-full sm:w-[140px] outline-none focus:border-[#0097FB] transition-colors"
+                    className="bg-white/5 border border-white/10 rounded-[9px] py-2.5 pl-10 pr-3.5 text-[14px] w-full sm:w-35 outline-none focus:border-[#0097FB] transition-colors"
                   />
                 </div>
               </div>
@@ -189,7 +189,7 @@ const DashboardAdminParametres = () => {
             {/* Explication visuelle */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-7">
               {equivalences.filter(e => e.type !== "CM").map(eq => (
-                <div key={eq.id} className="bg-[#0097FB]/5 border border-[#0097FB]/10 p-4 rounded-xl flex-1 min-w-[200px]">
+                <div key={eq.id} className="bg-[#0097FB]/5 border border-[#0097FB]/10 p-4 rounded-xl flex-1 min-w-50">
                   <div className="flex items-center gap-3">
                     <span className="bg-[#0097FB] text-white text-[11px] font-bold px-2 py-0.5 rounded">1H CM</span>
                     <MdArrowForward className="text-[#7A8FAD]" />
@@ -204,7 +204,7 @@ const DashboardAdminParametres = () => {
 
             {/* Tableau */}
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[500px] border-collapse">
+              <table className="w-full min-w-125 border-collapse">
                 <thead className="bg-white/5 text-[#7A8FAD] text-[12px] uppercase tracking-wider">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold border-b border-white/5">#</th>
@@ -295,7 +295,7 @@ const DashboardAdminParametres = () => {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 z-[1000] flex items-center gap-3 px-5 py-3 rounded-[10px] text-white text-[14px] font-medium shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${
+            className={`fixed bottom-6 right-6 z-1000 flex items-center gap-3 px-5 py-3 rounded-[10px] text-white text-[14px] font-medium shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${
               toast.type === "success" ? "bg-[#10B981]" : "bg-[#EF4444]"
             }`}
           >

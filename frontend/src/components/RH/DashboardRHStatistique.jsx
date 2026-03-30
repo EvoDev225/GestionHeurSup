@@ -189,14 +189,14 @@ const DashboardRHStatistique = () => {
       <SidebarRH isOpen={isOpen} onClose={() => setIsOpen(false)} role="rh" />
       <Navbar onMenuClick={() => setIsOpen(!isOpen)} userName="Aminata Koné" userRole="Responsable RH" />
 
-      <main className="md:ml-[230px] pt-16 p-6 transition-all duration-300 min-h-screen">
+      <main className="md:ml-57.5 pt-16 p-6 transition-all duration-300 min-h-screen">
         
         {/* EN-TÊTE */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-[26px] font-bold text-white">Statistiques</h1>
             <p className="text-[#7A8FAD] text-sm mt-1">Analyse et suivi des heures · Lecture seule</p>
-          </div>
+          </div>    
           <div className="bg-[#7B2FBE]/15 border border-[#7B2FBE]/30 text-[#7B2FBE] text-[13px] font-bold py-1.5 px-4 rounded-full flex items-center gap-2">
             <MdSupervisorAccount size={16} />
             <span>RH</span>
@@ -211,14 +211,14 @@ const DashboardRHStatistique = () => {
             
             <select 
               value={selectedAnnee} onChange={(e) => setAnnee(e.target.value)}
-              className="bg-white/5 border border-white/10 text-white rounded-lg py-2 px-3.5 text-[13px] min-w-[140px] outline-none focus:border-[#0097FB] cursor-pointer"
+              className="bg-white/5 border border-white/10 text-white rounded-lg py-2 px-3.5 text-[13px] min-w-35 outline-none focus:border-[#0097FB] cursor-pointer"
             >
               {anneesOptions.map(a => <option key={a} value={a} className="bg-[#0D1B2A]">{a}</option>)}
             </select>
 
             <select 
               value={selectedMois} onChange={(e) => setMois(e.target.value)}
-              className="bg-white/5 border border-white/10 text-white rounded-lg py-2 px-3.5 text-[13px] min-w-[160px] outline-none focus:border-[#0097FB] cursor-pointer"
+              className="bg-white/5 border border-white/10 text-white rounded-lg py-2 px-3.5 text-[13px] min-w-40 outline-none focus:border-[#0097FB] cursor-pointer"
             >
               {moisOptions.map(m => <option key={m} value={m} className="bg-[#0D1B2A]">{m}</option>)}
             </select>
@@ -373,7 +373,7 @@ const DashboardRHStatistique = () => {
             </select>
             <select 
               value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}
-              className="bg-[#0D1B2A] border border-white/10 text-white rounded-lg py-2 px-3 text-[13px] min-w-[160px] outline-none focus:border-[#0097FB] cursor-pointer"
+              className="bg-[#0D1B2A] border border-white/10 text-white rounded-lg py-2 px-3 text-[13px] min-w-40 outline-none focus:border-[#0097FB] cursor-pointer"
             >
               {statutsFiltres.map(s => <option key={s} value={s}>{s}</option>)}
             </select>

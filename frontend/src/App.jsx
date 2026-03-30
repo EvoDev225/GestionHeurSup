@@ -12,6 +12,8 @@ import { MdConstruction } from "react-icons/md";
 import DashboardRH from "./components/RH/DashboardRH.jsx";
 import DashboardRhSaisie from "./components/RH/DashboardRhSaisie.jsx";
 import DashboardRHStatistique from "./components/RH/DashboardRHStatistique.jsx";
+import DashboardRhExport from "./components/RH/DashboardRhExport.jsx";
+
 
 const RHPlaceholder = ({ title }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,7 +46,7 @@ function App() {
           <Route path="/rh/dashboard" element={<DashboardRH />} />
           <Route path="/rh/heures" element={<DashboardRhSaisie/>} />
           <Route path="/rh/statistiques" element={<DashboardRHStatistique title="Statistiques" />} />
-          <Route path="/rh/paiements" element={<RHPlaceholder title="États de paiement" />} />
+          <Route path="/rh/paiements" element={<DashboardRhExport />} />
         </Routes>
       </BrowserRouter>
     </div>
