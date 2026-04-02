@@ -2,7 +2,8 @@ const {db} = require('../config/db')
 const bcrypt = require('bcrypt')
 const genererRef = require('../middlewares/genererRef')
 const genererJeton = require('../middlewares/generateJWT')
-
+const { v4: uuidv4 } = require("uuid");
+const { oublierMotdepasse, motdepasseReintialiser } = require('../mail/mail');
 
 // CRUD
 const getAllUsers = async (req,res)=>{
@@ -44,7 +45,7 @@ const newUser = async (req,res)=>{
     const motdepasseHash = await bcrypt.hash(mdp,10)
     // Si l'utilisateur est l'admistrateur
     if(role === "admin"){
-        const refAdmin = genererRef("admin")
+        const refAdmin = await genererRef("admin",db)
         try {
             const [rows] = await db.query(`INSERT INTO utilisateur (nom,prenom,sexe,email,contact,role,mdp,stat)
                 VALUES (?,?,?,?,?,?,?,?)`,[nom,prenom,sexe,email,contact,role,motdepasseHash,"actif"])
@@ -57,7 +58,7 @@ const newUser = async (req,res)=>{
     }
     // Si l'utilisateur est une ressource humaine
     if(role ==="rh"){
-        const refRh = genererRef("rh")
+        const refRh = await genererRef("rh",db)
         try {
             const [rows] = await db.query(`INSERT INTO utilisateur (nom,prenom,sexe,email,contact,role,mdp,stat)
                 VALUES (?,?,?,?,?,?,?,?)`,[nom,prenom,sexe,email,contact,role,motdepasseHash,"actif"])
@@ -70,7 +71,7 @@ const newUser = async (req,res)=>{
     }
     // Si l'utilisateur est un enseignant
     if(role==="enseignant"){
-        const refEns = genererRef("enseignant")
+        const refEns = await genererRef("enseignant",db)
         if(!grade || !statut || !departement || !tauxh){
             return res.status(400).json({message:"Tous les champs sont obligatoires pour un enseignant"})
         }
@@ -214,7 +215,78 @@ const VerifierAuthentification = async (req,res)=>{
     }
 }
 
+const motdepasseOublie = async (req,res)=>{
+    const {email} = req.body
+    if (!email) {
+        return res.status(400).json({ message: "Email requis" });
+    }
+    try {
+        const [rows] = await db.query(
+            `SELECT idutil, nom, email, stat FROM utilisateur WHERE utilisateur.email = ?`,
+            [email]
+        );
+        if(rows.length === 0){
+            return res.status(404).json({ message: "Utilisateur non trouvé" });
+        }
+        const utilisateur = rows[0];
 
+        // 2. Vérifier que le compte est actif
+        if (utilisateur.stat === "inactif") {
+            return res.status(403).json({ message: "Compte inactif" });
+        }
+
+        // 3. Générer le token et son expiry (15 minutes)
+        const token = uuidv4();
+        const expiry = new Date(Date.now() + 15 * 60 * 1000); // +15 min
+
+        await db.query(
+            `UPDATE utilisateur 
+            SET reset_token = ?, reset_token_expiry = ?
+            WHERE utilisateur.idutil = ?`,
+            [token, expiry, utilisateur.idutil]
+        );
+        const lien = `${process.env.LINK}/user/reinitialiserMotdepasse/${token}`;
+        await oublierMotdepasse(email, lien);
+        return res.status(200).json({ message: "Email de réinitialisation envoyé" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+
+}
+const changerMotdepasse = async (req,res)=>{
+    const {token} = req.params
+    const {nouveauMdp} = req.body
+    if(!token || !nouveauMdp){
+        return res.status(400).json({message:" nouveau mot de passe requis"})
+    }
+    try {
+        const [rows] = await db.query(
+            `SELECT idutil,email, reset_token_expiry 
+            FROM utilisateur 
+            WHERE reset_token = ?`,
+            [token]
+        );
+
+        if (rows.length === 0) {
+            return res.status(400).json({ message: "Token invalide" });
+        }
+        const expiry = new Date(rows[0].reset_token_expiry);
+        if (Date.now() > expiry) {
+            return res.status(400).json({ message: "Token expiré, refaites la demande" });
+        }
+        const mdpHashed = await bcrypt.hash(nouveauMdp, 10);
+        await db.query(
+            `UPDATE utilisateur 
+            SET mdp = ?, reset_token = NULL, reset_token_expiry = NULL
+            WHERE utilisateur.idutil = ?`,
+            [mdpHashed, rows[0].idutil]
+        );
+        await motdepasseReintialiser(rows[0].email);
+        return res.status(200).json({ message: "Mot de passe réinitialisé avec succès" });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
 
 module.exports = {
     getAllUsers,
@@ -225,5 +297,7 @@ module.exports = {
     deleteUser,
     Connexion,
     Deconnexion,
-    VerifierAuthentification
+    VerifierAuthentification,
+    motdepasseOublie,
+    changerMotdepasse
 }
