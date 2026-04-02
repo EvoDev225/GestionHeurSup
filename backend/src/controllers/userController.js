@@ -201,7 +201,18 @@ const Deconnexion = async (req,res)=>{
         return res.status(500).json({message:error.message})
     }
 }
-
+const VerifierAuthentification = async (req,res)=>{
+    try {
+        const [rows] = await db.query(`SELECT * FROM utilisateur
+        LEFT JOIN administrateur ON utilisateur.idutil=administrateur.idutil
+        LEFT JOIN ressource_humaine ON utilisateur.idutil=ressource_humaine.idutil
+        LEFT JOIN enseignant ON utilisateur.idutil=enseignant.idutil    
+        WHERE utilisateur.idutil=?`,[req.user.IdUtilisateur])
+        return res.status(200).json({data:rows[0]}) 
+    } catch (error) {
+        return res.status(500).json({message:error.message})
+    }
+}
 
 
 
@@ -213,5 +224,6 @@ module.exports = {
     updateSimpleUser,
     deleteUser,
     Connexion,
-    Deconnexion
+    Deconnexion,
+    VerifierAuthentification
 }

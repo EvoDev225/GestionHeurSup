@@ -7,7 +7,8 @@ const {
     updateSimpleUser,
     deleteUser,
     Connexion,
-    Deconnexion} = require('../controllers/userController');
+    Deconnexion,
+    VerifierAuthentification} = require('../controllers/userController');
 const verifierToken = require('../middlewares/verificationJeton');
 const r =express.Router();
 
@@ -23,5 +24,6 @@ r.delete("/deleteUser",deleteUser)
 // Authentification et gestion de session
 r.post("/connexion",Connexion)
 r.post("/deconnexion",verifierToken,Deconnexion)
+r.get("/verifierAuthentification",verifierToken,VerifierAuthentification)
 
 module.exports=r;
