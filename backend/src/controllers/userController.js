@@ -1,7 +1,7 @@
 const {db} = require('../config/db')
 const bcrypt = require('bcrypt')
 const genererRef = require('../middlewares/genererRef')
-const { get } = require('../routes/routeUtilisateur')
+
 
 // CRUD
 const getAllUsers = async (req,res)=>{
@@ -85,6 +85,48 @@ const newUser = async (req,res)=>{
     }
     
 }
+const updateUserForAdmin = async (req, res) => {
+    const { id } = req.params;
+    const { nom, prenom, sexe, email, contact, role, mdp, grade, stat, statut, departement, tauxh } = req.body;
 
+    if (!id) {
+        return res.status(400).json({ message: "ID utilisateur est requis" });
+    }
 
-module.exports = {getAllUsers,newUser,getUserById}
+    let motdepasseHashed;
+    if (mdp) {
+        motdepasseHashed = await bcrypt.hash(mdp, 10);
+    }
+    if(role==="admin" || role==="rh"){
+        try {
+        const [rows] = await db.query(
+        `UPDATE utilisateur 
+        SET nom=?, prenom=?, sexe=?, email=?, contact=?, role=?, mdp=?, stat=?
+        WHERE utilisateur.idutil=?`,
+        [nom, prenom, sexe, email, contact, role, motdepasseHashed, stat, id]
+        );
+        return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    }
+    if(role==="enseignant"){
+        try {
+        const [rows] = await db.query(
+        `UPDATE utilisateur 
+        SET nom=?, prenom=?, sexe=?, email=?, contact=?, role=?, mdp=?, stat=?
+        WHERE utilisateur.idutil=?`,
+        [nom, prenom, sexe, email, contact, role, motdepasseHashed, stat, id]
+        );
+        const [rows2]= await db.query(`
+            UPDATE enseignant SET grade=?, statut=?, departement=?, tauxh=?
+            WHERE enseignant.idutil=?`,[grade,statut,departement,tauxh,id])
+        return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows, data_ens: rows2 });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+}
+
+module.exports = {getAllUsers,newUser,getUserById,updateUserForAdmin}
