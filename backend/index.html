@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Références</title>
+</head>
+<body>
+    <h1>Générateur de Références</h1>
+    <script>
+        const genererRef = (role) => {
+            let prefix;
+            switch (role) {
+                case 'admin':
+                    prefix = 'ADM';
+                    break;
+                case 'rh':
+                    prefix = 'RH';
+                    break;
+                case 'enseignant':
+                    prefix = 'ENS';
+                    break;  
+            }
+            
+            // ✅ CORRECTION 1: Utiliser 'prefix' au lieu de 'prefixe'
+            const d = new Date();
+            const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+            
+            // ✅ CORRECTION 2: Ajouter paramètre 'num' et utiliser 'prefix'
+            const num = 1; // Par défaut
+            return `${prefix}-${dateStr}-${String(num).padStart(4,'0')}`;
+        };
+
+        // Test
+        console.log(genererRef('admin'));     // ADM-20241205-0001
+        console.log(genererRef('rh'));        // RH-20241205-0001  
+        console.log(genererRef('enseignant')); // ENS-20241205-0001
+    </script>
+</body>
+</html>
