@@ -1,6 +1,7 @@
 const {db} = require('../config/db')
 const bcrypt = require('bcrypt')
 const genererRef = require('../middlewares/genererRef')
+const { get } = require('../routes/routeUtilisateur')
 
 // CRUD
 const getAllUsers = async (req,res)=>{
@@ -14,7 +15,26 @@ const getAllUsers = async (req,res)=>{
         return res.status(500).json({message:error.message})
     }
 }
-
+const getUserById  = async (req,res)=>{
+    const {id}= req.params
+    if(!id){
+        return res.status(400).json({message:"ID utilisateur est requis"})
+    }
+    try {
+        const [rows] = await db.query(`SELECT * FROM utilisateur 
+            LEFT JOIN administrateur ON utilisateur.idutil=administrateur.idutil 
+            LEFT JOIN ressource_humaine ON utilisateur.idutil=ressource_humaine.idutil 
+            LEFT JOIN enseignant ON utilisateur.idutil=enseignant.idutil
+            WHERE utilisateur.idutil=?`
+            ,[id])
+        if(rows.length===0){
+            return res.status(404).json({message:"Utilisateur non trouvé"})
+        }
+        return res.status(200).json({data:rows[0]})
+    } catch (error) {
+        return res.status(500).json({message:error.message})
+    }
+}
 const newUser = async (req,res)=>{
     const {nom,prenom,sexe,email,contact,role,mdp,grade,statut,departement,tauxh} = req.body
     if(!nom || !prenom || !sexe || !email || !contact || !role || !mdp){
@@ -67,4 +87,4 @@ const newUser = async (req,res)=>{
 }
 
 
-module.exports = {getAllUsers,newUser}
+module.exports = {getAllUsers,newUser,getUserById}
