@@ -1,5 +1,5 @@
 require('dotenv').config() // ← PREMIÈRE LIGNE ABSOLUMENT
-
+const cookie_parser = require('cookie-parser')
 const express= require('express')
 const cors= require('cors')
 const { db, TestDbConnexion } = require('./config/db') // ← destructuration correcte
@@ -7,9 +7,9 @@ const { db, TestDbConnexion } = require('./config/db') // ← destructuration co
 const app  = express()
 const PORT = process.env.PORT || 3000
 const userRoutes = require('./routes/routeUtilisateur') // ← importer les routes utilisateur
-const genererRef = require('./middlewares/genererRef')
 app.use(cors())
 app.use(express.json())
+app.use(cookie_parser())
 
 // Test connexion
 TestDbConnexion()

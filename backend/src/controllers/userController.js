@@ -1,6 +1,7 @@
 const {db} = require('../config/db')
 const bcrypt = require('bcrypt')
 const genererRef = require('../middlewares/genererRef')
+const genererJeton = require('../middlewares/generateJWT')
 
 
 // CRUD
@@ -168,4 +169,49 @@ const deleteUser = async (req,res)=>{
         }
 }
 
-module.exports = {getAllUsers,newUser,getUserById,updateUserForAdmin,updateSimpleUser,deleteUser}
+// Authentification et gestion de session
+
+const Connexion =async (req,res)=>{
+    const {email,mdp} = req.body
+    if(!email || !mdp){
+        return res.status(400).json({message:"Veuillez remplir tous les champs"})
+    }
+    try{
+        const [rows] = await db.query(`SELECT * FROM utilisateur WHERE email=?`,[email])
+        if(rows.length === 0){
+            return res.status(404).json({message:"Utilisateur non trouvé"})
+        }
+        const verifierMotDePasse = await bcrypt.compare(mdp,rows[0].mdp)
+        if(!verifierMotDePasse){
+            return res.status(401).json({message:"Mot de passe incorrect"})
+        }
+        await  genererJeton(res,rows)
+        return res.status(200).json({message:"Connexion réussie"})
+    }catch(error){
+        return res.status(500).json({message:error.message})
+    }
+}
+
+const Deconnexion = async (req,res)=>{
+    try {
+        const role = req.user.type
+        await res.clearCookie(`token_${role}`)
+    return res.status(200).json({message:"Déconnexion réussie"})
+    } catch (error) {
+        return res.status(500).json({message:error.message})
+    }
+}
+
+
+
+
+module.exports = {
+    getAllUsers,
+    newUser,
+    getUserById,
+    updateUserForAdmin,
+    updateSimpleUser,
+    deleteUser,
+    Connexion,
+    Deconnexion
+}
