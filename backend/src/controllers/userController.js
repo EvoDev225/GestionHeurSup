@@ -126,7 +126,46 @@ const updateUserForAdmin = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 }
+}
+const updateSimpleUser = async (req,res)=>{
+    const { id } = req.params;
+    const { nom, prenom, sexe, email, contact, mdp} = req.body;
 
+    if (!id) {
+        return res.status(400).json({ message: "ID utilisateur est requis" });
+    }
+
+    let motdepasseHashed;
+    if (mdp) {
+        motdepasseHashed = await bcrypt.hash(mdp, 10);
+    }
+    try {
+        const [rows] = await db.query(
+        `UPDATE utilisateur 
+        SET nom=?, prenom=?, sexe=?, email=?, contact=?, mdp=?
+        WHERE utilisateur.idutil=?`,
+        [nom, prenom, sexe, email, contact, motdepasseHashed, id]
+        );
+        return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    
+}
+const deleteUser = async (req,res)=>{
+    const {id} = req.params
+        if (!id) {  
+        return res.status(400).json({ message: "ID utilisateur est requis" });
+        }
+        try {
+            const [rows] = await db.query(`DELETE FROM utilisateur WHERE idutil=?`,[id])
+            if(rows.affectedRows===0){
+                return res.status(404).json({message:"Utilisateur non trouvé"})
+            }
+            return res.status(200).json({message:"Utilisateur supprimé avec succès"})
+        } catch (error) {
+            return res.status(500).json({message:error.message})
+        }
 }
 
-module.exports = {getAllUsers,newUser,getUserById,updateUserForAdmin}
+module.exports = {getAllUsers,newUser,getUserById,updateUserForAdmin,updateSimpleUser,deleteUser}
