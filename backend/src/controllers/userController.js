@@ -170,8 +170,10 @@ const deleteUser = async (req,res)=>{
         }
 }
 
-// Authentification et gestion de session
 
+
+
+// Authentification et gestion de session
 const Connexion =async (req,res)=>{
     const {email,mdp} = req.body
     if(!email || !mdp){
@@ -192,7 +194,6 @@ const Connexion =async (req,res)=>{
         return res.status(500).json({message:error.message})
     }
 }
-
 const Deconnexion = async (req,res)=>{
     try {
         const role = req.user.type
@@ -214,7 +215,6 @@ const VerifierAuthentification = async (req,res)=>{
         return res.status(500).json({message:error.message})
     }
 }
-
 const motdepasseOublie = async (req,res)=>{
     const {email} = req.body
     if (!email) {
@@ -287,6 +287,10 @@ const changerMotdepasse = async (req,res)=>{
         return res.status(500).json({ message: error.message });
     }
 }
+
+
+
+
 
 module.exports = {
     getAllUsers,
