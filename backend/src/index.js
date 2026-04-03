@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 3000
 const userRoutes = require('./routes/routeUtilisateur') // ← importer les routes utilisateur
 const anacRoutes = require('./routes/routeAnac') // ← importer les routes année académique
 const matiereRoutes = require('./routes/routeMatiere') // ← importer les routes matière
+const paieRoutes = require('./routes/routePaie') // ← importer les routes paiement
 app.use(cors())
 app.use(express.json())
 app.use(cookie_parser())
@@ -18,6 +19,7 @@ TestDbConnexion()
 app.use("/user",userRoutes)
 app.use("/anac",anacRoutes)
 app.use("/matiere",matiereRoutes)
+app.use("/paie",paieRoutes)
 
 // ← utiliser la fonction de génération de référence pour tester
 
