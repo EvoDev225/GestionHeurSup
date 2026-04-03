@@ -58,6 +58,7 @@ const updateMatiere = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Matière non trouvée" });
         }
+        await logAction("UPDATE", `Mise à jour de la matière id ${id}`, db)
         return res.status(200).json({ message: "Matière mise à jour avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -74,6 +75,7 @@ const deleteMatiere = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Matière non trouvée" });
         }
+        await logAction("DELETE", `Suppression de la matière id ${id}`, db)
         return res.status(200).json({ message: "Matière supprimée avec succès" });
     } catch (error) {
         return res.status(500).json({ message: error.message });

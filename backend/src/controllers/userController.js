@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const genererRef = require('../middlewares/genererRef')
 const genererJeton = require('../middlewares/generateJWT')
 const { v4: uuidv4 } = require("uuid");
+const logAction = require('./journalHelper');
 const { oublierMotdepasse, motdepasseReintialiser } = require('../mail/mail');
 
 // CRUD
@@ -51,6 +52,7 @@ const newUser = async (req,res)=>{
                 VALUES (?,?,?,?,?,?,?,?)`,[nom,prenom,sexe,email,contact,role,motdepasseHash,"actif"])
                 const idUser = rows.insertId
             const [rows2]= await db.query(`INSERT INTO administrateur (reference,idutil) VALUES (?,?)`,[refAdmin,idUser])
+                await logAction("INSERT", `Ajout de l'administrateur ${nom} ${prenom}`, db)
                 return res.status(201).json({message:"Administrateur  ajouté avec succès",data:rows,data_admin:rows2})
         } catch (error) {
             return res.status(500).json({message:error.message})
@@ -64,6 +66,7 @@ const newUser = async (req,res)=>{
                 VALUES (?,?,?,?,?,?,?,?)`,[nom,prenom,sexe,email,contact,role,motdepasseHash,"actif"])
                 const idUser = rows.insertId
                 const [rows2]= await db.query(`INSERT INTO ressource_humaine (reference,idutil) VALUES (?,?)`,[refRh,idUser])
+                await logAction("INSERT", `Ajout du RH ${nom} ${prenom}`, db)
                 return res.status(201).json({message:"RH ajouté avec succès",data:rows,data_rh:rows2})
         } catch (error) {
             return res.status(500).json({message:error.message})
@@ -80,6 +83,7 @@ const newUser = async (req,res)=>{
                 VALUES (?,?,?,?,?,?,?,?)`,[nom,prenom,sexe,email,contact,role,motdepasseHash,"actif"])
                 const idUser = rows.insertId
             const [rows2]= await db.query(`INSERT INTO enseignant (referencens,grade,statut,departement,tauxh,idutil) VALUES (?,?,?,?,?,?)`,[refEns,grade,statut,departement,tauxh,idUser])
+                await logAction("INSERT", `Ajout de l'enseignant ${nom} ${prenom}`, db)
                 return res.status(201).json({message:"Enseignant ajouté avec succès",data:rows,data_ens:rows2})
         } catch (error) {
             return res.status(500).json({message:error.message})
@@ -107,6 +111,7 @@ const updateUserForAdmin = async (req, res) => {
         WHERE utilisateur.idutil=?`,
         [nom, prenom, sexe, email, contact, role, motdepasseHashed, stat, id]
         );
+        await logAction("UPDATE", `Mise à jour de l'utilisateur id ${id}`, db)
         return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -123,6 +128,7 @@ const updateUserForAdmin = async (req, res) => {
         const [rows2]= await db.query(`
             UPDATE enseignant SET grade=?, statut=?, departement=?, tauxh=?
             WHERE enseignant.idutil=?`,[grade,statut,departement,tauxh,id])
+        await logAction("UPDATE", `Mise à jour de l'utilisateur id ${id}`, db)
         return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows, data_ens: rows2 });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -148,6 +154,7 @@ const updateSimpleUser = async (req,res)=>{
         WHERE utilisateur.idutil=?`,
         [nom, prenom, sexe, email, contact, motdepasseHashed, id]
         );
+        await logAction("UPDATE", `Mise à jour de l'utilisateur id ${id}`, db)
         return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -164,6 +171,7 @@ const deleteUser = async (req,res)=>{
             if(rows.affectedRows===0){
                 return res.status(404).json({message:"Utilisateur non trouvé"})
             }
+            await logAction("DELETE", `Suppression de l'utilisateur id ${id}`, db)
             return res.status(200).json({message:"Utilisateur supprimé avec succès"})
         } catch (error) {
             return res.status(500).json({message:error.message})

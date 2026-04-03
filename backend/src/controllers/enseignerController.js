@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const logAction = require('./journalHelper');
 
 const getAllEnseigner = async (req, res) => {
     try {
@@ -38,6 +39,7 @@ const newEnseigner = async (req, res) => {
             'INSERT INTO enseigner (idens, idmat, idanac, date, type, duree, salle, observation, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
             [idens, idmat, idanac, date, type, duree, salle, observation || null, 'en_attente']
         );
+        await logAction("INSERT", `Ajout d'une séance ${type} pour l'enseignant id ${idens} — matière id ${idmat}`, db)
         return res.status(201).json({ message: "Enregistrement ajouté avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -58,6 +60,7 @@ const updateEnseigner = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Enregistrement non trouvé" });
         }
+        await logAction("UPDATE", `Mise à jour de la séance id ${id}`, db)
         return res.status(200).json({ message: "Enregistrement mis à jour avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -74,6 +77,7 @@ const deleteEnseigner = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Enregistrement non trouvé" });
         }
+        await logAction("DELETE", `Suppression de la séance id ${id}`, db)
         return res.status(200).json({ message: "Enregistrement supprimé avec succès" });
     } catch (error) {
         return res.status(500).json({ message: error.message });

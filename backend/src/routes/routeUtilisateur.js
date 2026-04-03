@@ -20,7 +20,7 @@ r.get("/specificUser/:id",getUserById)
 r.post("/newUser",newUser)
 r.put("/updateUserForAdmin/:id",updateUserForAdmin)
 r.put("/updateUser/:id",updateSimpleUser)
-r.delete("/deleteUser",deleteUser)
+r.delete("/deleteUser/:id",deleteUser)
 
 
 // Authentification et gestion de session

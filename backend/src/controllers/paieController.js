@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const logAction = require('./journalHelper');
 
 const getAllPaie = async (req, res) => {
     try {
@@ -38,6 +39,7 @@ const newPaie = async (req, res) => {
             'INSERT INTO paiement (idens, idanac, datepaie, montpaie, mois, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())',
             [idens, idanac, datepaie, montpaie, mois, 'genere']
         );
+        await logAction("INSERT", `Ajout du paiement pour l'enseignant id ${idens} — ${mois}`, db)
         return res.status(201).json({ message: "Paiement ajouté avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -58,6 +60,7 @@ const updatePaie = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Paiement non trouvé" });
         }
+        await logAction("UPDATE", `Mise à jour du paiement id ${id}`, db)
         return res.status(200).json({ message: "Paiement mis à jour avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -74,6 +77,7 @@ const deletePaie = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Paiement non trouvé" });
         }
+        await logAction("DELETE", `Suppression du paiement id ${id}`, db)
         return res.status(200).json({ message: "Paiement supprimé avec succès" });
     } catch (error) {
         return res.status(500).json({ message: error.message });

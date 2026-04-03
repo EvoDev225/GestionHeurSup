@@ -11,6 +11,7 @@ const anacRoutes = require('./routes/routeAnac') // ← importer les routes ann�
 const matiereRoutes = require('./routes/routeMatiere') // ← importer les routes matière
 const paieRoutes = require('./routes/routePaie') // ← importer les routes paiement
 const enseignerRoutes = require('./routes/routeEnseigner') // ← importer les routes enseigner
+const journalRoutes = require('./routes/routeJournal') // ← importer les routes journal
 app.use(cors())
 app.use(express.json())
 app.use(cookie_parser())
@@ -22,6 +23,7 @@ app.use("/anac",anacRoutes)
 app.use("/matiere",matiereRoutes)
 app.use("/paie",paieRoutes)
 app.use("/enseigner",enseignerRoutes)
+app.use("/journal",journalRoutes)
 
 // ← utiliser la fonction de génération de référence pour tester
 

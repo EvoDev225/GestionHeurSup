@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const logAction = require('./journalHelper');
 
 const getAllAnac = async (req, res) => {
     try {
@@ -38,6 +39,7 @@ const newAnac = async (req, res) => {
             'INSERT INTO annee_academique (date_debut, date_fin, equ_cm_td, equ_cm_tp, statut) VALUES (?, ?, ?, ?, ?)',
             [date_debut, date_fin, equ_cm_td, equ_cm_tp, 'en_cours']
         );
+        await logAction("INSERT", `Ajout de l'année académique ${date_debut}-${date_fin}`, db)
         return res.status(201).json({ message: "Année académique ajoutée avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -58,6 +60,7 @@ const updateAnac = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Année académique non trouvée" });
         }
+        await logAction("UPDATE", `Mise à jour de l'année académique id ${id}`, db)
         return res.status(200).json({ message: "Année académique mise à jour avec succès", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -74,6 +77,7 @@ const deleteAnac = async (req, res) => {
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Année académique non trouvée" });
         }
+        await logAction("DELETE", `Suppression de l'année académique id ${id}`, db)
         return res.status(200).json({ message: "Année académique supprimée avec succès" });
     } catch (error) {
         return res.status(500).json({ message: error.message });
