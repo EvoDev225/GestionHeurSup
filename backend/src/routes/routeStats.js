@@ -7,7 +7,10 @@ const {
     getHeuresParMois,
     getHeuresParDepartement,
     getRepartitionHeures,
-    getEnseignantsEnDepassement
+    getEnseignantsEnDepassement,
+    getMoyenneHeuresParEnseignant,
+    getTauxDepassement,
+    getStatutHeures
 } = require('../controllers/statsController');
 const r = express.Router();
 
@@ -19,5 +22,8 @@ r.get("/heuresParMois", getHeuresParMois);
 r.get("/heuresParDepartement", getHeuresParDepartement);
 r.get("/repartitionHeures", getRepartitionHeures);
 r.get("/enseignantsEnDepassement", getEnseignantsEnDepassement);
+r.get("/moyenneHeuresParEnseignant", getMoyenneHeuresParEnseignant);
+r.get("/tauxDepassement", getTauxDepassement);
+r.get("/statutHeures", getStatutHeures);
 
 module.exports = r;

@@ -172,6 +172,103 @@ const getEnseignantsEnDepassement = async (req, res) => {
     }
 };
 
+const getMoyenneHeuresParEnseignant = async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                COUNT(DISTINCT e.idens) AS total_enseignants,
+                SUM(e.duree) / COUNT(DISTINCT e.idens) AS moyenne_heures
+            FROM enseigner e
+            JOIN annee_academique a ON e.idanac = a.idanac
+            WHERE a.statut = 'en_cours'
+        `;
+        const [rows] = await db.query(sql);
+        if (rows.length === 0 || rows[0].total_enseignants === 0) {
+            return res.status(404).json({ message: "Aucune donnée pour calculer la moyenne" });
+        }
+        return res.status(200).json({ message: "Moyenne des heures récupérée", data: rows[0] });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getTauxDepassement = async (req, res) => {
+    try {
+        const sqlTotal = `
+            SELECT COUNT(DISTINCT idens) AS total 
+            FROM enseigner e 
+            JOIN annee_academique a ON e.idanac = a.idanac 
+            WHERE a.statut = 'en_cours'
+        `;
+        const sqlDepassement = `
+            SELECT COUNT(DISTINCT sub.idens) AS total_depassement FROM (
+                SELECT e.idens,
+                    (SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
+                     SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                     SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) AS total_heures_eq,
+                    m.volumhor
+                FROM enseigner e
+                JOIN matiere m ON e.idmat = m.idmat
+                JOIN annee_academique a ON e.idanac = a.idanac
+                WHERE a.statut = 'en_cours'
+                GROUP BY e.idens, m.idmat, m.volumhor, a.equ_cm_td, a.equ_cm_tp
+                HAVING total_heures_eq > m.volumhor
+            ) AS sub
+        `;
+
+        const [rowsTotal] = await db.query(sqlTotal);
+        const [rowsDep] = await db.query(sqlDepassement);
+
+        const total_enseignants = rowsTotal[0].total;
+        const nb_depassement = rowsDep[0].total_depassement;
+
+        if (total_enseignants === 0) return res.status(404).json({ message: "Aucun enseignant actif trouvé" });
+
+        const taux_depassement = parseFloat(((nb_depassement / total_enseignants) * 100).toFixed(2));
+
+        return res.status(200).json({
+            message: "Taux de dépassement calculé",
+            data: { nb_depassement, total_enseignants, taux_depassement }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getStatutHeures = async (req, res) => {
+    try {
+        const sql = `
+            SELECT statut, SUM(duree) AS total_heures
+            FROM enseigner
+            JOIN annee_academique a ON enseigner.idanac = a.idanac
+            WHERE a.statut = 'en_cours'
+            GROUP BY statut
+        `;
+        const [rows] = await db.query(sql);
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune donnée de statut" });
+
+        const stats = { valide: 0, en_attente: 0, rejete: 0 };
+        rows.forEach(r => { stats[r.statut] = parseFloat(r.total_heures); });
+
+        const total_global = stats.valide + stats.en_attente + stats.rejete;
+        if (total_global === 0) return res.status(404).json({ message: "Total global nul" });
+
+        const data = {
+            heures_valide: stats.valide,
+            heures_en_attente: stats.en_attente,
+            heures_rejete: stats.rejete,
+            pourcentage_valide: parseFloat(((stats.valide / total_global) * 100).toFixed(2)),
+            pourcentage_en_attente: parseFloat(((stats.en_attente / total_global) * 100).toFixed(2)),
+            pourcentage_rejete: parseFloat(((stats.rejete / total_global) * 100).toFixed(2)),
+            total_global
+        };
+
+        return res.status(200).json({ message: "Statut des heures récupéré", data });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getTotalUtilisateurs,
     getTotalHeures,
@@ -180,5 +277,8 @@ module.exports = {
     getHeuresParMois,
     getHeuresParDepartement,
     getRepartitionHeures,
-    getEnseignantsEnDepassement
+    getEnseignantsEnDepassement,
+    getMoyenneHeuresParEnseignant,
+    getTauxDepassement,
+    getStatutHeures
 };
