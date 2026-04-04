@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { FaGraduationCap } from "react-icons/fa";
 import {
   MdDashboard,
@@ -7,9 +7,6 @@ import {
   MdBarChart,
   MdReceipt,
   MdLogout,
-  MdAdminPanelSettings,
-  MdSupervisorAccount,
-  MdSchool,
 } from "react-icons/md";
 
 const navItems = [
@@ -19,9 +16,8 @@ const navItems = [
   { label: "États de paiement", path: "/rh/paiements", icon: MdReceipt },
 ];
 
-const SidebarRH = ({ isOpen, onClose, role = "rh" }) => {
+const SidebarRH = ({ isOpen, onClose}) => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   return (
     <>
@@ -69,42 +65,6 @@ const SidebarRH = ({ isOpen, onClose, role = "rh" }) => {
 
         <div className="px-4 py-4 border-t border-white/5 space-y-4">
           {/* Switch Block */}
-          <div>
-            <p className="text-[#7A8FAD] text-[11px] uppercase font-bold tracking-[0.08em] mb-2 px-2">Mode d'aperçu</p>
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                onClick={() => navigate("/dashboard-admin")}
-                className={`flex-1 flex flex-col items-center justify-center py-2 rounded-lg transition-all gap-1 
-                  ${role === "admin" 
-                    ? "bg-[#0097FB] text-white font-semibold cursor-default" 
-                    : "bg-white/5 border border-white/10 text-[#7A8FAD] hover:bg-[#0097FB]/10 hover:text-[#0097FB]"}`}
-              >
-                <MdAdminPanelSettings className="text-base" />
-                <span className="text-[11px]">Admin</span>
-              </button>
-              <button
-                onClick={() => navigate("/rh/dashboard")}
-                className={`flex-1 flex flex-col items-center justify-center py-2 rounded-lg transition-all gap-1 
-                  ${role === "rh" 
-                    ? "bg-[#7B2FBE] text-white font-semibold cursor-default" 
-                    : "bg-white/5 border border-white/10 text-[#7A8FAD] hover:bg-[#7B2FBE]/10 hover:text-[#7B2FBE]"}`}
-              >
-                <MdSupervisorAccount className="text-base" />
-                <span className="text-[11px]">RH</span>
-              </button>
-              <button
-                onClick={() => navigate("/enseignant/dashboard")}
-                className={`flex-1 flex flex-col items-center justify-center py-2 rounded-lg transition-all gap-1 
-                  ${role === "enseignant" 
-                    ? "bg-[#10B981] text-white font-semibold cursor-default" 
-                    : "bg-white/5 border border-white/10 text-[#7A8FAD] hover:bg-[#10B981]/10 hover:text-[#10B981]"}`}
-              >
-                <MdSchool className="text-base" />
-                <span className="text-[11px]">Ens.</span>
-              </button>
-            </div>
-            <p className="text-[#3D5068] text-[10px] text-center mt-2 italic">Bascule temporaire — sans auth</p>
-          </div>
 
           {/* Logout Section */}
           <div className="pt-2 border-t border-white/5">

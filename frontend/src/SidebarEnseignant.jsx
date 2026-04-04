@@ -1,7 +1,7 @@
 import React from 'react';
-import { MdDashboard, MdEventNote, MdReceiptLong, MdLogout, MdAdminPanelSettings, MdSupervisorAccount, MdSchool } from 'react-icons/md';
+import { MdDashboard, MdEventNote, MdReceiptLong, MdLogout } from 'react-icons/md';
 import { FaGraduationCap } from 'react-icons/fa';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 
 const navItems = [
   { label: "Tableau de bord", path: "/enseignant/dashboard", icon: MdDashboard },
@@ -9,9 +9,7 @@ const navItems = [
   { label: "Mon récapitulatif", path: "/enseignant/recap", icon: MdReceiptLong },
 ];
 
-const SidebarEnseignant = ({ isOpen, onClose }) => {
-  const location = useLocation();
-  
+const SidebarEnseignant = ({ isOpen, onClose }) => {  const location = useLocation();
 
   return (
     <>
@@ -68,9 +66,7 @@ const SidebarEnseignant = ({ isOpen, onClose }) => {
         </div>
 
         {/* ZONE BOTTOM */}
-        <div className="p-3 mt-auto">
-        
-
+        <div className="p-3 mt-auto border-t border-white/5 mb-1">
           {/* BOUTON DÉCONNEXION */}
           <div className="pt-2.5 border-t border-white/5 mt-2">
             <button
