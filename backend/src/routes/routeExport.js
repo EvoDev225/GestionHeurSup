@@ -3,7 +3,10 @@ const r = express.Router();
 const { 
     exportFicheEnseignant, 
     exportEtatGlobalHeures, 
-    exportEtatComptabilite 
+    exportEtatComptabilite,
+    exportFicheEnseignantExcel,
+    exportEtatGlobalHeuresExcel,
+    exportEtatComptabiliteExcel
 } = require('../controllers/exportController');
 
 // ============================================================
@@ -12,5 +15,12 @@ const {
 r.get("/pdf/ficheEnseignant/:id", exportFicheEnseignant);
 r.get("/pdf/etatGlobalHeures", exportEtatGlobalHeures);
 r.get("/pdf/etatComptabilite", exportEtatComptabilite);
+
+// ============================================================
+// EXPORT EXCEL
+// ============================================================
+r.get("/excel/ficheEnseignant/:id", exportFicheEnseignantExcel);
+r.get("/excel/etatGlobalHeures", exportEtatGlobalHeuresExcel);
+r.get("/excel/etatComptabilite", exportEtatComptabiliteExcel);
 
 module.exports = r;
