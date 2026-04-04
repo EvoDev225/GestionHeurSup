@@ -269,6 +269,244 @@ const getStatutHeures = async (req, res) => {
     }
 };
 
+const getTotalUtilisateursParRole = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT role, COUNT(*) AS total FROM utilisateur GROUP BY role');
+        if (rows.length === 0) return res.status(404).json({ message: "Aucun utilisateur trouvé" });
+        return res.status(200).json({ message: "Total des utilisateurs par rôle récupéré", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getTotalUtilisateursParStat = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT stat, COUNT(*) AS total FROM utilisateur GROUP BY stat');
+        if (rows.length === 0) return res.status(404).json({ message: "Aucun utilisateur trouvé" });
+        const result = { total_actifs: 0, total_inactifs: 0 };
+        rows.forEach(r => {
+            if (r.stat === 'actif') result.total_actifs = r.total;
+            else if (r.stat === 'inactif') result.total_inactifs = r.total;
+        });
+        return res.status(200).json({ message: "Total des utilisateurs par statut récupéré", data: result });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getStatutMatieres = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT statut, COUNT(*) AS total FROM matiere GROUP BY statut');
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune matière trouvée" });
+        const result = { total_assignees: 0, total_non_assignees: 0 };
+        rows.forEach(r => {
+            if (r.statut === 'assignee') result.total_assignees = r.total;
+            else if (r.statut === 'non_assignee') result.total_non_assignees = r.total;
+        });
+        return res.status(200).json({ message: "Statut des matières récupéré", data: result });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getStatutAnneesAcademiques = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT statut, COUNT(*) AS total FROM annee_academique GROUP BY statut');
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune année académique trouvée" });
+        const result = { total_en_cours: 0, total_terminees: 0 };
+        rows.forEach(r => {
+            if (r.statut === 'en_cours') result.total_en_cours = r.total;
+            else if (r.statut === 'terminee') result.total_terminees = r.total;
+        });
+        return res.status(200).json({ message: "Statut des années académiques récupéré", data: result });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getDerniersJournaux = async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM journal ORDER BY created_at DESC LIMIT 20');
+        if (rows.length === 0) return res.status(404).json({ message: "Aucun journal trouvé" });
+        return res.status(200).json({ message: "Derniers journaux récupérés", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getProfilEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await db.query(`
+            SELECT u.nom, u.prenom, u.email, u.contact, u.sexe, ens.referencens, ens.grade, ens.statut, ens.departement, ens.tauxh
+            FROM enseignant ens
+            JOIN utilisateur u ON ens.idutil = u.idutil
+            WHERE ens.idens = ?`, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Profil enseignant non trouvé" });
+        return res.status(200).json({ message: "Profil enseignant récupéré", data: rows[0] });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getHeuresEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = `
+            SELECT
+                SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) AS heures_cm,
+                SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) AS heures_td,
+                SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) AS heures_tp,
+                (SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
+                 SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                 SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) AS total_heures_eq,
+                SUM(DISTINCT m.volumhor) AS volumhor,
+                GREATEST(0,
+                    (SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
+                     SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                     SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) - SUM(DISTINCT m.volumhor)
+                ) AS heures_complementaires
+            FROM enseigner e
+            JOIN matiere m ON e.idmat = m.idmat
+            JOIN annee_academique a ON e.idanac = a.idanac
+            WHERE e.idens = ? AND a.statut = 'en_cours'
+            GROUP BY a.equ_cm_td, a.equ_cm_tp
+        `;
+        const [rows] = await db.query(sql, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune heure trouvée pour cet enseignant" });
+        return res.status(200).json({ message: "Heures de l'enseignant récupérées", data: rows[0] });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getRemunerationEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = `
+            SELECT
+                (SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
+                 SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                 SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) AS total_heures_eq,
+                ens.tauxh,
+                ((SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
+                  SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                  SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) * ens.tauxh) AS remuneration_estimee
+            FROM enseigner e
+            JOIN enseignant ens ON e.idens = ens.idens
+            JOIN annee_academique a ON e.idanac = a.idanac
+            WHERE e.idens = ? AND a.statut = 'en_cours'
+            GROUP BY ens.tauxh, a.equ_cm_td, a.equ_cm_tp
+        `;
+        const [rows] = await db.query(sql, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Données de rémunération indisponibles" });
+        return res.status(200).json({ message: "Rémunération estimée récupérée", data: rows[0] });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getHeuresParMoisEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = `
+            SELECT
+                MONTH(e.date) AS mois,
+                MONTHNAME(e.date) AS nom_mois,
+                SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) AS heures_cm,
+                SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) AS heures_td,
+                SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) AS heures_tp,
+                SUM(e.duree) AS total_heures
+            FROM enseigner e
+            JOIN annee_academique a ON e.idanac = a.idanac
+            WHERE e.idens = ? AND a.statut = 'en_cours'
+            GROUP BY MONTH(e.date), MONTHNAME(e.date)
+            ORDER BY mois ASC
+        `;
+        const [rows] = await db.query(sql, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune donnée mensuelle pour cet enseignant" });
+        return res.status(200).json({ message: "Heures par mois récupérées", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getHeuresParMatiereEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = `
+            SELECT
+                m.intitule,
+                SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) AS heures_cm,
+                SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) AS heures_td,
+                SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) AS heures_tp,
+                SUM(e.duree) AS total_heures
+            FROM enseigner e
+            JOIN matiere m ON e.idmat = m.idmat
+            JOIN annee_academique a ON e.idanac = a.idanac
+            WHERE e.idens = ? AND a.statut = 'en_cours'
+            GROUP BY m.idmat, m.intitule
+        `;
+        const [rows] = await db.query(sql, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune donnée par matière pour cet enseignant" });
+        return res.status(200).json({ message: "Heures par matière récupérées", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getStatutSeancesEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = `SELECT statut, SUM(duree) AS total_heures FROM enseigner WHERE idens = ? GROUP BY statut`;
+        const [rows] = await db.query(sql, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune séance trouvée" });
+
+        const stats = { valide: 0, en_attente: 0, rejete: 0 };
+        rows.forEach(r => { 
+            if (r.statut === 'valide') stats.valide = parseFloat(r.total_heures);
+            if (r.statut === 'en_attente') stats.en_attente = parseFloat(r.total_heures);
+            if (r.statut === 'rejete') stats.rejete = parseFloat(r.total_heures);
+        });
+
+        const total_global = stats.valide + stats.en_attente + stats.rejete;
+        if (total_global === 0) return res.status(404).json({ message: "Total global nul" });
+
+        const data = {
+            heures_valide: stats.valide,
+            heures_en_attente: stats.en_attente,
+            heures_rejete: stats.rejete,
+            pourcentage_valide: parseFloat(((stats.valide / total_global) * 100).toFixed(2)),
+            pourcentage_en_attente: parseFloat(((stats.en_attente / total_global) * 100).toFixed(2)),
+            pourcentage_rejete: parseFloat(((stats.rejete / total_global) * 100).toFixed(2)),
+            total_global
+        };
+
+        return res.status(200).json({ message: "Statut des séances récupéré", data });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getDernieresSeancesEnseignant = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sql = `
+            SELECT e.idenseigner, m.intitule, e.type, e.duree, e.date, e.salle, e.statut
+            FROM enseigner e
+            JOIN matiere m ON e.idmat = m.idmat
+            WHERE e.idens = ?
+            ORDER BY e.date DESC
+            LIMIT 10
+        `;
+        const [rows] = await db.query(sql, [id]);
+        if (rows.length === 0) return res.status(404).json({ message: "Aucune séance récente trouvée" });
+        return res.status(200).json({ message: "Dernières séances récupérées", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getTotalUtilisateurs,
     getTotalHeures,
@@ -280,5 +518,17 @@ module.exports = {
     getEnseignantsEnDepassement,
     getMoyenneHeuresParEnseignant,
     getTauxDepassement,
-    getStatutHeures
+    getStatutHeures,
+    getTotalUtilisateursParRole,
+    getTotalUtilisateursParStat,
+    getStatutMatieres,
+    getStatutAnneesAcademiques,
+    getDerniersJournaux,
+    getProfilEnseignant,
+    getHeuresEnseignant,
+    getRemunerationEnseignant,
+    getHeuresParMoisEnseignant,
+    getHeuresParMatiereEnseignant,
+    getStatutSeancesEnseignant,
+    getDernieresSeancesEnseignant
 };
