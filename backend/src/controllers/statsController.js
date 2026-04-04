@@ -386,11 +386,11 @@ const getRemunerationEnseignant = async (req, res) => {
         const sql = `
             SELECT
                 (SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
-                 SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
-                 SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) AS total_heures_eq,
+                SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) AS total_heures_eq,
                 ens.tauxh,
                 ((SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
-                  SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
                   SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) * ens.tauxh) AS remuneration_estimee
             FROM enseigner e
             JOIN enseignant ens ON e.idens = ens.idens

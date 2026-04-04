@@ -13,6 +13,8 @@ const paieRoutes = require('./routes/routePaie') // ← importer les routes paie
 const enseignerRoutes = require('./routes/routeEnseigner') // ← importer les routes enseigner
 const journalRoutes = require('./routes/routeJournal') // ← importer les routes journal
 const statsRoutes = require('./routes/routeStats') // ← importer les routes statistiques
+// Document
+const exportRoutes = require('./routes/routeExport') // ← importer les routes d'exportation de documents
 app.use(cors())
 app.use(express.json())
 app.use(cookie_parser())
@@ -26,6 +28,7 @@ app.use("/paie",paieRoutes)
 app.use("/enseigner",enseignerRoutes)
 app.use("/journal",journalRoutes)
 app.use("/stats", statsRoutes)
+app.use("/export", exportRoutes)
 
 // ← utiliser la fonction de génération de référence pour tester
 
