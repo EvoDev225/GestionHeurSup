@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { FaGraduationCap } from "react-icons/fa";
 import {
   MdDashboard,
@@ -9,6 +9,8 @@ import {
   MdDescription,
   MdLogout,
 } from "react-icons/md";
+import { deconnexion } from "../../fonctions/utilisateur";
+import toast from "react-hot-toast";
 
 const navItems = [
   { label: "Tableau de bord", path: "/dashboard-admin", icon: MdDashboard },
@@ -19,7 +21,17 @@ const navItems = [
 ];
 
 const SidebarAdmin = ({ isOpen, onClose }) => {
-  const location = useLocation();
+  const navigate = useNavigate();
+  const handleDeconnexion = async () => {
+  try {
+    await deconnexion();
+    toast.success("Déconnexion réussie !");
+    navigate("/");
+  } catch (error) {
+    toast.error("Erreur lors de la déconnexion.");
+  }
+};
+
 
   return (
     <>
@@ -72,7 +84,7 @@ const SidebarAdmin = ({ isOpen, onClose }) => {
           <div className="pt-2 border-t border-white/5">
             <button
               className="flex items-center gap-4 w-full px-4 py-3 text-[#EF4444] font-semibold hover:bg-[#EF4444]/10 rounded-lg transition-all duration-200"
-              onClick={() => console.log("Déconnexion...")}
+              onClick={handleDeconnexion}
             >
               <MdLogout className="text-2xl" />
               <span>Déconnexion</span>

@@ -4,30 +4,41 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaGraduationCap } from 'react-icons/fa';
 import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdArrowBack } from 'react-icons/md';
 import logo from "./assets/login.png"
+import { connexion } from './fonctions/utilisateur';
+import {useNavigate} from 'react-router-dom';
+import toast from 'react-hot-toast';
 const Accueil = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [login,setLogin]=useState({
+    email:"",
+    mdp:""
+  })
+  const navigate=useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
 
-  const handleLogin = () => {
-    // Validation basique
-    if (!email || !password) {
-      setError("Veuillez remplir tous les champs.");
+  const handleLogin= async()=>{
+    const {email,mdp}=login;
+    if (!email || !mdp) {
+      toast.error("Veuillez remplir tous les champs.");
       return;
     }
-    setError("");
-    
-    // Logique de soumission
-    console.log("Tentative de connexion :", { 
-      email, 
-      password, 
-      rememberMe 
-    });
-  };
+    try {
+      const res=await connexion(login);
+        switch (res.data.role) {
+          case "admin": navigate("/dashboard-admin"); break;
+          case "enseignant": navigate("/enseignant/dashboard"); break;
+          case "rh": navigate("/rh/dashboard"); break;
+          default: navigate("/"); break;
+        }
+      toast.success("Bienvenue, vous êtes connecté !");
+
+    } catch (error) {
+      toast.error("Les informations sont incorrectes !");
+    }
+  }
 
   const handleResetPassword = () => {
     if (!resetEmail) {
@@ -91,8 +102,7 @@ const Accueil = () => {
                     type="email"
                     placeholder="Saisissez votre email..."
                     className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-12 pr-4 text-white placeholder:text-[#94A3B8]/40 focus:border-[#0097FB]/50 outline-none transition-all"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setLogin({...login,email:e.target.value})}
                   />
                 </div>
               </div>
@@ -105,8 +115,8 @@ const Accueil = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="Saisissez votre mot de passe..."
                     className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-12 pr-12 text-white placeholder:text-[#94A3B8]/40 focus:border-[#0097FB]/50 outline-none transition-all"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={login.mdp}
+                    onChange={(e) => setLogin({...login,mdp:e.target.value})}
                   />
                   <div 
                     className="absolute right-4 cursor-pointer text-[#94A3B8] hover:text-white transition-colors"

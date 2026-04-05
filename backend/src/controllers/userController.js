@@ -197,7 +197,7 @@ const Connexion =async (req,res)=>{
             return res.status(401).json({message:"Mot de passe incorrect"})
         }
         await  genererJeton(res,rows)
-        return res.status(200).json({message:"Connexion réussie"})
+        return res.status(200).json({message:"Connexion réussie",data:rows[0]})
     }catch(error){
         return res.status(500).json({message:error.message})
     }

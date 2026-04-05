@@ -84,19 +84,7 @@ const fakeData = {
 
 
 const DashboardMain = () => {
-  const [data,setData] = useState([])
-  useEffect(()=>{
-    const allUser= async()=>{
-      try {
-      const res = await getAllUsers();
-      setData(res)
-      console.log(res)
-    } catch (error) {
-      console.error("Erreur lors de la récupération des utilisateurs :", error);
-    }
-    }
-    allUser()
-  },[])
+  
   // Configuration Graphique Line
   const lineData = {
     labels: fakeData.heuresParMois.labels,

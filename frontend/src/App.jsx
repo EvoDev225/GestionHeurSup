@@ -18,7 +18,7 @@ import DashboardEns from "./components/Enseignant/DashboardEns.jsx";
 import DashboardEnsHeures from "./components/Enseignant/DashboardEnsHeures.jsx";
 import DashboardEnsRecap from "./components/Enseignant/DashboardEnsRecap.jsx";
 
-
+import { Toaster } from "react-hot-toast";
 const RHPlaceholder = ({ title }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -52,6 +52,7 @@ const EnseignantPlaceholder = ({ title }) => {
 function App() {
   return (
     <div className="bg-[#000814] min-h-screen font-['Inter']">
+      <Toaster position="top-center" reverseOrder={false}></Toaster>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Accueil />} />

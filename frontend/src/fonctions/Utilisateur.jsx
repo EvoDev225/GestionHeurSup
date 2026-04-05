@@ -55,9 +55,9 @@ export const deleteUser = async (id) => {
     }
 };
 
-export const connexion = async (email, mdp) => {
+export const connexion = async (login) => {
     try {
-        const response = await axios.post(`${API_URL}/user/connexion`, { email, mdp });
+        const response = await axios.post(`${API_URL}/user/connexion`,  login );
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
