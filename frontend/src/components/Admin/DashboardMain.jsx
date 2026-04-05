@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import {
@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { MdPeople, MdAccessTime, MdAttachMoney, MdWarning } from 'react-icons/md';
+import { getAllUsers } from '../../fonctions/utilisateur';
 
 // Enregistrement des composants Chart.js
 ChartJS.register(
@@ -79,7 +80,23 @@ const fakeData = {
   ],
 };
 
+
+
+
 const DashboardMain = () => {
+  const [data,setData] = useState([])
+  useEffect(()=>{
+    const allUser= async()=>{
+      try {
+      const res = await getAllUsers();
+      setData(res)
+      console.log(res)
+    } catch (error) {
+      console.error("Erreur lors de la récupération des utilisateurs :", error);
+    }
+    }
+    allUser()
+  },[])
   // Configuration Graphique Line
   const lineData = {
     labels: fakeData.heuresParMois.labels,

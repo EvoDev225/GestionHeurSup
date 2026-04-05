@@ -15,7 +15,7 @@ const journalRoutes = require('./routes/routeJournal') // ← importer les route
 const statsRoutes = require('./routes/routeStats') // ← importer les routes statistiques
 // Document
 const exportRoutes = require('./routes/routeExport') // ← importer les routes d'exportation de documents
-app.use(cors())
+app.use(cors({origin: 'http://localhost:5173', crredentials: true})) // ← autoriser les requêtes du frontend avec les cookies
 app.use(express.json())
 app.use(cookie_parser())
 
