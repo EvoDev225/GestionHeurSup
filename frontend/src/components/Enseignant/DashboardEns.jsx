@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SidebarEnseignant from '../../components/Enseignant/SidebarEnseignant';
 import Navbar from '../../components/Navbar';
 import {
@@ -25,6 +25,9 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 ChartJS.register(
   CategoryScale,
@@ -83,7 +86,8 @@ const matieres = [
 
 const DashboardEns = () => {
   const [isOpen, setIsOpen] = useState(false);
-
+const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   // Calculs dérivés
   const totalEffectue = statsPersonnelles.cmTotal + statsPersonnelles.tdTotal + statsPersonnelles.tpTotal;
   const depassement = Math.max(0, totalEffectue - enseignant.prevues);
@@ -125,7 +129,23 @@ const DashboardEns = () => {
       y: { grid: { color: "rgba(255,255,255,0.04)" }, ticks: { color: "#7A8FAD", font: { size: 11 } } },
     }
   };
-
+  useEffect(() => {
+        const fetchUserData = async () => {
+          try {
+            const res = await verifierAuthentification();
+            if(res.data.role !=="enseignant"){
+              toast.error("Accès refusé. Redirection vers la page d'accueil.");
+              await deconnexion()
+              navigate("/")
+            }
+            
+          } catch (error) {
+            navigate("/")
+            toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+          }
+        };
+        fetchUserData();
+      },[]);
   return (
     <div className="bg-[#000814] min-h-screen font-['Inter']">
       <SidebarEnseignant isOpen={isOpen} onClose={() => setIsOpen(false)} role="enseignant" />

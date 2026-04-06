@@ -13,6 +13,8 @@ import {
   MdCheck, 
   MdError 
 } from "react-icons/md";
+import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import { useNavigate } from "react-router-dom";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -25,6 +27,7 @@ const itemVariants = {
 };
 
 const DashboardAdminParametres = () => {
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // État Année Académique
@@ -83,6 +86,24 @@ const DashboardAdminParametres = () => {
       eq.id === id ? { ...eq, multiplicateur: parseFloat(val) || 0 } : eq
     ));
   };
+   useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const res = await verifierAuthentification();
+          
+          if(res.data.role !=="admin"){
+            toast.error("Accès refusé. Redirection vers la page d'accueil.");
+            await deconnexion()
+            navigate('/')
+          }
+          
+        } catch (error) {
+          navigate("/")
+          toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+        }
+      };
+      fetchUserData();
+    },[]);
 
   return (
     <div className="min-h-screen bg-[#000814]">

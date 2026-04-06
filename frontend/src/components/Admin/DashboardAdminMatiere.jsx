@@ -14,6 +14,9 @@ import {
   MdPersonAdd, 
   MdSearchOff 
 } from "react-icons/md";
+import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const fakeMatieres = [
   { id: 1, intitule: "Algorithmique", filiere: "Informatique", niveau: "L1", enseignant: "Jean François", statut: "Assignée" },
@@ -43,6 +46,7 @@ const itemVariants = {
 };
 
 const DashboardAdminMatiere = () => {
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedFiliere, setSelectedFiliere] = useState("Toutes les filières");
@@ -89,7 +93,24 @@ const DashboardAdminMatiere = () => {
   };
 
   const getInitials = (name) => name ? name.split(" ").map(n => n[0]).join("").toUpperCase() : "??";
-
+   useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const res = await verifierAuthentification();
+          
+          if(res.data.role !=="admin"){
+            toast.error("Accès refusé. Redirection vers la page d'accueil.");
+            await deconnexion()
+            navigate('/')
+          }
+          
+        } catch (error) {
+          navigate("/")
+          toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+        }
+      };
+      fetchUserData();
+    },[]);
   return (
     <div className="min-h-screen bg-[#000814]">
       <SidebarAdmin isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />

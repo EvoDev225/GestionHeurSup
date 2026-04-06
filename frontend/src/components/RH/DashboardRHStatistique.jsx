@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Chart as ChartJS,
@@ -29,6 +29,9 @@ import {
 } from 'react-icons/md';
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
+import { useNavigate } from 'react-router-dom';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import toast from 'react-hot-toast';
 
 // Enregistrement Chart.js
 ChartJS.register(
@@ -96,6 +99,7 @@ const recapEnseignants = [
 ];
 
 const DashboardRHStatistique = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAnnee, setAnnee] = useState("2025-2026");
   const [selectedMois, setMois] = useState("Toute l'année");
@@ -183,6 +187,24 @@ const DashboardRHStatistique = () => {
       y: { grid: { color: "rgba(255, 255, 255, 0.04)" }, ticks: { color: "#7A8FAD", font: { size: 11 } } },
     },
   };
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await verifierAuthentification();
+        if(res.data.role !=="rh"){
+          toast.error("Accès refusé. Redirection vers la page d'accueil.");
+          await deconnexion()
+          navigate("/")
+          
+        }
+      } catch (error) {
+        navigate("/")
+        toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+      }
+    };
+    fetchUserData();
+  },[]);
+
 
   return (
     <div className="bg-[#000814] min-h-screen">

@@ -9,6 +9,8 @@ import {
   MdDescription, MdDownload, MdCheckCircle, MdError, 
   MdHourglassEmpty 
 } from "react-icons/md";
+import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import { useNavigate } from "react-router-dom";
 
 const enseignants = [
   { id: 1, nom: "Jean François", dept: "Informatique" },
@@ -41,6 +43,7 @@ const itemVariants = {
 };
 
 const DashboardAdminExports = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAnnee, setAnnee] = useState("2025-2026");
   const [selectedMois, setMois] = useState("Mars");
@@ -66,6 +69,24 @@ const DashboardAdminExports = () => {
   const filteredEnseignants = selectedDept === "Tous les départements" 
     ? enseignants 
     : enseignants.filter(e => e.dept === selectedDept);
+    useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const res = await verifierAuthentification();
+          
+          if(res.data.role !=="admin"){
+            toast.error("Accès refusé. Redirection vers la page d'accueil.");
+            await deconnexion()
+            navigate('/')
+          }
+          
+        } catch (error) {
+          navigate("/")
+          toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+        }
+      };
+      fetchUserData();
+    },[]);
 
   const FilterSelect = ({ label, icon: Icon, value, onChange, options, placeholder }) => (
     <div className="flex flex-col gap-1.5 w-full">

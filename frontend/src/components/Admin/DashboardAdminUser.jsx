@@ -13,6 +13,10 @@ import {
   MdDelete, 
   MdLock 
 } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
+import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import toast from "react-hot-toast";
+import { getCoutTotalHeures, getDerniersJournaux, getEnseignantsEnDepassement, getHeuresParDepartement, getHeuresParMois, getRepartitionHeures, getTotalHeures, getTotalUtilisateurs, getTotalUtilisateursParRole, getTotalUtilisateursParStat } from "../../fonctions/Stats.jsx";
 
 const fakeUsers = [
   { id: 1, nom: "Jean", prenom: "François", email: "jean.francois@edu.ci", role: "Admin", statut: "Actif" },
@@ -43,6 +47,7 @@ const itemVariants = {
 };
 
 const DashboardAdminUser = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("utilisateurs");
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("Tous les départements");
@@ -89,7 +94,33 @@ const DashboardAdminUser = () => {
   };
 
   const getInitials = (nom, prenom) => `${nom.charAt(0)}${prenom.charAt(0)}`.toUpperCase();
-
+ useEffect(() => {
+      const fetchUserData = async () => {
+        try {
+          const res = await verifierAuthentification();
+          
+          if(res.data.role !=="admin"){
+            toast.error("Accès refusé. Redirection vers la page d'accueil.");
+            await deconnexion()
+            navigate('/')
+          }
+          
+        } catch (error) {
+          navigate("/")
+          toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+        }
+      };
+      const fetchStats=async ()=>{
+        try {
+          const res = await getDerniersJournaux()
+          console.log(res)
+        } catch (error) {
+          console.error("Erreur lors de la récupération des statistiques :", error);
+        }
+      }
+      fetchUserData();
+      fetchStats()
+    },[]);
   return (
     <div className="min-h-screen bg-[#000814]">
       <SidebarAdmin isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />

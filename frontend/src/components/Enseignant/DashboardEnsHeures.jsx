@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 
 import {
@@ -17,6 +17,9 @@ import {
 } from 'react-icons/md';
 import SidebarEnseignant from './SidebarEnseignant';
 import Navbar from '../Navbar';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const enseignant = {
   nom: "Jean François",
@@ -55,7 +58,7 @@ const seances = [
 
 const DashboardEnsHeures = () => {
   const [isOpen, setIsOpen] = useState(false);
-  
+  const navigate = useNavigate();
   // États Filtres
   const [search, setSearch] = useState("");
   const [filterMois, setFilterMois] = useState("Tous les mois");
@@ -105,7 +108,23 @@ const DashboardEnsHeures = () => {
   });
 
   const totalAffiche = filteredSeances.reduce((a, s) => a + s.duree, 0);
-
+  useEffect(() => {
+        const fetchUserData = async () => {
+          try {
+            const res = await verifierAuthentification();
+            if(res.data.role !=="enseignant"){
+              toast.error("Accès refusé. Redirection vers la page d'accueil.");
+              await deconnexion()
+              navigate("/")
+            }
+            
+          } catch (error) {
+            navigate("/")
+            toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+          }
+        };
+        fetchUserData();
+      },[]);
   return (
     <div className="bg-[#000814] min-h-screen font-['Inter']">
       <SidebarEnseignant isOpen={isOpen} onClose={() => setIsOpen(false)} role="enseignant" />

@@ -20,6 +20,8 @@ import {
 } from 'react-icons/md';
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
+import { useNavigate } from 'react-router-dom';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
 
 const moisCourant = "Mars 2026";
 
@@ -47,6 +49,7 @@ const typeOptions = ["Tous les types", "CM", "TD", "TP"];
 const statutOptions = ["Tous les statuts", "Validé", "En attente", "Rejeté"];
 
 const DashboardRhSaisie = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [seances, setSeances] = useState([
     { id: 1, enseignantId: 1, nom: "Jean François", code: "ENS-001", matiere: "Algorithmique", date: "2026-03-28", type: "CM", duree: 3, salle: "Amphi A", observations: "Chapitre 3 terminé", statut: "Validé" },
@@ -184,6 +187,24 @@ const DashboardRhSaisie = () => {
   };
 
   const getInitials = (name) => name.split(" ").map(n => n[0]).join("").toUpperCase();
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await verifierAuthentification();
+        if(res.data.role !=="rh"){
+          toast.error("Accès refusé. Redirection vers la page d'accueil.");
+          await deconnexion()
+          navigate("/")
+          
+        }
+      } catch (error) {
+        navigate("/")
+        toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+      }
+    };
+    fetchUserData();
+  },[]);
+
 
   return (
     <div className="bg-[#000814] min-h-screen font-['Inter']">

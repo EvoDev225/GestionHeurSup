@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
 import {
@@ -22,6 +22,9 @@ import {
   MdHistory,
   MdCheckCircle,
 } from 'react-icons/md';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 // Enregistrement Chart.js
 ChartJS.register(
@@ -74,7 +77,8 @@ const enseignantsDepassement = [
 
 const DashboardRH = () => {
   const [isOpen, setIsOpen] = useState(false);
-
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const getInitials = (name) => name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
   // Config Line Chart
@@ -126,6 +130,23 @@ const DashboardRH = () => {
       legend: { position: "right", labels: { color: "#7A8FAD", font: { size: 12 }, boxWidth: 12 } },
     },
   };
+   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await verifierAuthentification();
+        if(res.data.role !=="rh"){
+          toast.error("Accès refusé. Redirection vers la page d'accueil.");
+          await deconnexion()
+          navigate("/")
+          
+        }
+      } catch (error) {
+        navigate("/")
+        toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+      }
+    };
+    fetchUserData();
+  },[]);
 
   return (
     <div className="bg-[#000814] min-h-screen">

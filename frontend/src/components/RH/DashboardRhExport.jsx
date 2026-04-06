@@ -25,6 +25,8 @@ import {
 
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import { useNavigate } from 'react-router-dom';
 
 const moisOptions = [
   "Mars 2026", "Février 2026", "Janvier 2026",
@@ -55,6 +57,7 @@ const historiqueInitial = [
 ];
 
 const DashboardRhExport = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAnnee, setAnnee] = useState("2025-2026");
   const [selectedMois, setMois] = useState("Mars 2026");
@@ -97,6 +100,24 @@ const DashboardRhExport = () => {
     if (totalH > e.prevues) acc.depassements++;
     return acc;
   }, { masseSalariale: 0, depassements: 0 });
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await verifierAuthentification();
+        if(res.data.role !=="rh"){
+          toast.error("Accès refusé. Redirection vers la page d'accueil.");
+          await deconnexion()
+          navigate("/")
+          
+        }
+      } catch (error) {
+        navigate("/")
+        toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+      }
+    };
+    fetchUserData();
+  },[]);
+
 
   return (
     <div className="bg-[#000814] min-h-screen font-['Inter']">

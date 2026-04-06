@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SidebarEnseignant from '../../components/Enseignant/SidebarEnseignant';
 import Navbar from '../../components/Navbar';
 import {
@@ -17,6 +17,8 @@ import {
   MdCheckCircle,
   MdError
 } from 'react-icons/md';
+import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import { useNavigate } from 'react-router-dom';
 
 const enseignant = {
   nom: "Jean François",
@@ -50,6 +52,7 @@ const recapAnnuel = {
 };
 
 const DashboardEnsRecap = () => {
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMois, setMois] = useState("Toute l'année");
   const [loadingPDF, setLoadingPDF] = useState(false);
@@ -95,6 +98,24 @@ const DashboardEnsRecap = () => {
   const filteredMoisDetails = selectedMois === "Toute l'année"
     ? moisDetails
     : moisDetails.filter(m => m.mois === selectedMois);
+
+     useEffect(() => {
+        const fetchUserData = async () => {
+          try {
+            const res = await verifierAuthentification();
+            if(res.data.role !=="enseignant"){
+              toast.error("Accès refusé. Redirection vers la page d'accueil.");
+              await deconnexion()
+              navigate("/")
+            }
+            
+          } catch (error) {
+            navigate("/")
+            toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+          }
+        };
+        fetchUserData();
+      },[]);
 
   return (
     <div className="bg-[#000814] min-h-screen font-['Inter']">
