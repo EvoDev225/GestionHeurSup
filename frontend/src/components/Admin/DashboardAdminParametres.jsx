@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SidebarAdmin from "./SidebarAdmin.jsx";
 import Navbar from "../Navbar.jsx";
+import { getAllAnac, newAnac, updateAnac } from "../../fonctions/Anac.jsx";
+import toast from "react-hot-toast";
 import { 
   MdCalendarToday, 
   MdCheckCircle, 
@@ -15,6 +17,8 @@ import {
 } from "react-icons/md";
 import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
 import { useNavigate } from "react-router-dom";
+import { getStatutAnneesAcademiques } from "../../fonctions/Stats.jsx";
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,14 +33,53 @@ const itemVariants = {
 const DashboardAdminParametres = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  useEffect(()=>{
-    try{
-      
-    }catch(error){
+  const [anacData, setAnacData] = useState(null); // données brutes de l'API
+  const [anacId, setAnacId] = useState(null);     // idanac pour updateAnac
 
-    }
-  })
-  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const res = await verifierAuthentification();
+        if (res.data.role !== "admin") {
+          toast.error("Accès refusé. Redirection vers la page d'accueil.");
+          await deconnexion();
+          navigate('/');
+        }
+      } catch (error) {
+        navigate("/");
+        toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+      }
+    };
+
+    const fetchAnac = async () => {
+      try {
+        const res = await getAllAnac();
+        const liste = res.data ?? [];
+        if (liste.length > 0) {
+          const anac = liste[0]; // prendre l'année en cours
+          setAnacId(anac.idanac);
+          setAnneeDebut(String(anac.date_debut));
+          setAnneeFin(String(anac.date_fin));
+          setAnneeEnregistree({ debut: String(anac.date_debut), fin: String(anac.date_fin) });
+          setAnacData(anac);
+          // Mettre à jour les équivalences depuis la BD
+          const mapper = (prev) => prev.map(eq => {
+            if (eq.type === "TD") return { ...eq, multiplicateur: parseFloat(anac.equ_cm_td) };
+            if (eq.type === "TP") return { ...eq, multiplicateur: parseFloat(anac.equ_cm_tp) };
+            return eq;
+          });
+          setEquivalences(mapper);
+          setTempEquivalences(mapper);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des années académiques :", error);
+      }
+    };
+
+    fetchUserData();
+    fetchAnac();
+  }, [navigate]);
+
   // État Année Académique
   const [anneeDebut, setAnneeDebut] = useState("2025");
   const [anneeFin, setAnneeFin] = useState("2026");
@@ -52,23 +95,35 @@ const DashboardAdminParametres = () => {
   const [tempEquivalences, setTempEquivalences] = useState(initialEquivalences);
   const [editMode, setEditMode] = useState(false);
 
-  // État Toast
-  const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
-
-  const showToast = (message, type = "success") => {
-    setToast({ visible: true, message, type });
-    setTimeout(() => setToast({ ...toast, visible: false }), 3000);
-  };
-
-  const handleSaveAnnee = () => {
+  const handleSaveAnnee = async () => {
     const debut = parseInt(anneeDebut);
     const fin = parseInt(anneeFin);
 
-    if (anneeDebut.length === 4 && anneeFin.length === 4 && fin > debut) {
+    if (anneeDebut.length !== 4 || anneeFin.length !== 4 || fin <= debut) {
+      toast.error("Veuillez saisir des années valides (ex: 2025 - 2026).");
+      return;
+    }
+
+    const payload = {
+      date_debut: debut,
+      date_fin: fin,
+      equ_cm_td: equivalences.find(e => e.type === "TD")?.multiplicateur ?? 1.5,
+      equ_cm_tp: equivalences.find(e => e.type === "TP")?.multiplicateur ?? 2.0,
+      statut: "en_cours"
+    };
+
+    try {
+      if (anacId) {
+        await updateAnac(anacId, payload);
+        toast.success("Année académique mise à jour avec succès !");
+      } else {
+        const res = await newAnac(payload);
+        setAnacId(res.data?.idanac ?? null);
+        toast.success("Année académique enregistrée avec succès !");
+      }
       setAnneeEnregistree({ debut: anneeDebut, fin: anneeFin });
-      showToast("Année académique mise à jour avec succès !");
-    } else {
-      showToast("Veuillez saisir des années valides (ex: 2025 - 2026).", "error");
+    } catch (error) {
+      toast.error("Erreur lors de l'enregistrement de l'année académique.");
     }
   };
 
@@ -82,10 +137,27 @@ const DashboardAdminParametres = () => {
     setEditMode(false);
   };
 
-  const handleSaveEquivalences = () => {
-    setEquivalences([...tempEquivalences]);
-    setEditMode(false);
-    showToast("Coefficients d'équivalence sauvegardés.");
+  const handleSaveEquivalences = async () => {
+    const payload = {
+      date_debut: parseInt(anneeDebut),
+      date_fin: parseInt(anneeFin),
+      equ_cm_td: tempEquivalences.find(e => e.type === "TD")?.multiplicateur ?? 1.5,
+      equ_cm_tp: tempEquivalences.find(e => e.type === "TP")?.multiplicateur ?? 2.0,
+      statut: "en_cours"
+    };
+
+    try {
+      if (anacId) {
+        await updateAnac(anacId, payload);
+        setEquivalences([...tempEquivalences]);
+        setEditMode(false);
+        toast.success("Coefficients d'équivalence sauvegardés.");
+      } else {
+        toast.error("Veuillez d'abord enregistrer une année académique.");
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la sauvegarde des coefficients.");
+    }
   };
 
   const updateMultiplicateur = (id, val) => {
@@ -93,24 +165,6 @@ const DashboardAdminParametres = () => {
       eq.id === id ? { ...eq, multiplicateur: parseFloat(val) || 0 } : eq
     ));
   };
-   useEffect(() => {
-      const fetchUserData = async () => {
-        try {
-          const res = await verifierAuthentification();
-          
-          if(res.data.role !=="admin"){
-            toast.error("Accès refusé. Redirection vers la page d'accueil.");
-            await deconnexion()
-            navigate('/')
-          }
-          
-        } catch (error) {
-          navigate("/")
-          toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
-        }
-      };
-      fetchUserData();
-    },[]);
 
   return (
     <div className="min-h-screen bg-[#000814]">
@@ -315,23 +369,6 @@ const DashboardAdminParametres = () => {
             </div>
         </motion.div>
       </motion.main>
-
-      {/* TOAST NOTIFICATION */}
-      <AnimatePresence>
-        {toast.visible && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 z-1000 flex items-center gap-3 px-5 py-3 rounded-[10px] text-white text-[14px] font-medium shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${
-              toast.type === "success" ? "bg-[#10B981]" : "bg-[#EF4444]"
-            }`}
-          >
-            {toast.type === "success" ? <MdCheckCircle size={18} /> : <MdError size={18} />}
-            {toast.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
