@@ -9,18 +9,17 @@ import {
   MdDescription, MdDownload, MdCheckCircle, MdError, 
   MdHourglassEmpty 
 } from "react-icons/md";
-import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import { 
+  exportFicheEnseignantPDF,
+  exportEtatGlobalHeuresPDF,
+  exportEtatComptabilitePDF,
+  exportEtatGlobalHeuresExcel,
+  exportEtatComptabiliteExcel
+} from "../../fonctions/Export.jsx";
+import { getAllUsers, deconnexion, verifierAuthentification } from "../../fonctions/Utilisateur.jsx";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-const enseignants = [
-  { id: 1, nom: "Jean François", dept: "Informatique" },
-  { id: 2, nom: "Konan Charles", dept: "Informatique" },
-  { id: 3, nom: "Hervé Koffi", dept: "Droit" },
-  { id: 4, nom: "Moro Isaac", dept: "Marketing" },
-  { id: 5, nom: "Bamba Sory", dept: "Comptabilité" },
-];
-
-const departements = ["Tous les départements", "Informatique", "Droit", "Marketing", "Comptabilité"];
 const mois = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const annees = ["2023-2024", "2024-2025", "2025-2026"];
 
@@ -47,33 +46,84 @@ const DashboardAdminExports = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAnnee, setAnnee] = useState("2025-2026");
   const [selectedMois, setMois] = useState("Mars");
-  const [selectedDept, setDept] = useState("Tous les départements");
-  const [selectedEnseignant, setEnseignant] = useState("");
+  const [enseignants, setEnseignants] = useState([]);
+  const [selectedEnseignant, setEnseignant] = useState(""); // idutil de l'enseignant sélectionné
   const [loadingId, setLoadingId] = useState(null);
-  const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
-
-  const showToast = (message, type = "success") => {
-    setToast({ visible: true, message, type });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
-  };
 
   const simulerExport = (id, format, nom) => {
     const uniqueId = id + format;
     setLoadingId(uniqueId);
     setTimeout(() => {
       setLoadingId(null);
-      showToast(`${nom} exporté en ${format} avec succès`, "success");
+      toast.success(`${nom} exporté en ${format} avec succès`);
     }, 2000);
   };
 
-  const filteredEnseignants = selectedDept === "Tous les départements" 
-    ? enseignants 
-    : enseignants.filter(e => e.dept === selectedDept);
+  const handleExportFichePDF = async () => {
+    if (!selectedEnseignant) return;
+    setLoadingId("1PDF");
+    try {
+      await exportFicheEnseignantPDF(selectedEnseignant);
+      toast.success("Fiche individuelle exportée en PDF !");
+    } catch (error) {
+      toast.error("Erreur lors de l'export PDF.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleExportEtatGlobalPDF = async () => {
+    setLoadingId("2PDF");
+    try {
+      await exportEtatGlobalHeuresPDF();
+      toast.success("État global exporté en PDF !");
+    } catch (error) {
+      toast.error("Erreur lors de l'export PDF.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleExportEtatGlobalExcel = async () => {
+    setLoadingId("2Excel");
+    try {
+      await exportEtatGlobalHeuresExcel();
+      toast.success("État global exporté en Excel !");
+    } catch (error) {
+      toast.error("Erreur lors de l'export Excel.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleExportComptaPDF = async () => {
+    setLoadingId("3PDF");
+    try {
+      await exportEtatComptabilitePDF();
+      toast.success("État comptabilité exporté en PDF !");
+    } catch (error) {
+      toast.error("Erreur lors de l'export PDF.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleExportComptaExcel = async () => {
+    setLoadingId("3Excel");
+    try {
+      await exportEtatComptabiliteExcel();
+      toast.success("État comptabilité exporté en Excel !");
+    } catch (error) {
+      toast.error("Erreur lors de l'export Excel.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
     useEffect(() => {
       const fetchUserData = async () => {
         try {
           const res = await verifierAuthentification();
-          
           if(res.data.role !=="admin"){
             toast.error("Accès refusé. Redirection vers la page d'accueil.");
             await deconnexion()
@@ -85,7 +135,19 @@ const DashboardAdminExports = () => {
           toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
         }
       };
+
+      const fetchEnseignants = async () => {
+        try {
+          const res = await getAllUsers();
+          const liste = (res.data ?? []).filter(u => u.role === "enseignant");
+          setEnseignants(liste);
+        } catch (error) {
+          console.error("Erreur lors de la récupération des enseignants :", error);
+        }
+      };
+
       fetchUserData();
+      fetchEnseignants();
     },[]);
 
   const FilterSelect = ({ label, icon: Icon, value, onChange, options, placeholder }) => (
@@ -100,7 +162,7 @@ const DashboardAdminExports = () => {
         >
           {placeholder && <option value="">{placeholder}</option>}
           {options.map(opt => (
-            <option key={opt.id || opt} value={opt.nom || opt} className="bg-[#0D1B2A]">
+            <option key={opt.id || opt} value={opt.id || opt} className="bg-[#0D1B2A]">
               {opt.nom || opt}
             </option>
           ))}
@@ -109,21 +171,21 @@ const DashboardAdminExports = () => {
     </div>
   );
 
-  const ActionButton = ({ type, onClick, id, docName }) => {
+  const ActionButton = ({ type, onClick, disabled, loading }) => {
     const isPdf = type === "PDF";
-    const currentLoading = loadingId === id + type;
     const baseStyles = "flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all border w-full sm:w-auto min-w-[140px]";
     const themeStyles = isPdf 
       ? "bg-[#EF4444]/12 text-[#EF4444] border-[#EF4444]/20 hover:bg-[#EF4444]/20" 
       : "bg-[#10B981]/12 text-[#10B981] border-[#10B981]/20 hover:bg-[#10B981]/20";
+    const disabledStyles = (disabled || loading) ? "opacity-40 cursor-not-allowed" : "cursor-pointer";
     
     return (
       <button 
-        onClick={() => onClick(id, type, docName)}
-        disabled={loadingId !== null}
-        className={`${baseStyles} ${themeStyles} ${loadingId !== null ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
+        onClick={onClick}
+        disabled={disabled || loading}
+        className={`${baseStyles} ${themeStyles} ${disabledStyles}`}
       >
-        {currentLoading ? (
+        {loading ? (
           <>
             <MdHourglassEmpty className="animate-spin text-lg" />
             <span>Génération...</span>
@@ -158,11 +220,17 @@ const DashboardAdminExports = () => {
             <MdFilterList className="text-[#0097FB] text-[18px]" />
             <h2 className="text-[15px] font-semibold">Paramètres d'export</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <FilterSelect label="Année académique" icon={MdCalendarToday} value={selectedAnnee} onChange={e => setAnnee(e.target.value)} options={annees} />
             <FilterSelect label="Mois" icon={MdDateRange} value={selectedMois} onChange={e => setMois(e.target.value)} options={mois} />
-            <FilterSelect label="Département" icon={MdBusinessCenter} value={selectedDept} onChange={e => { setDept(e.target.value); setEnseignant(""); }} options={departements} />
-            <FilterSelect label="Enseignant" icon={MdPerson} value={selectedEnseignant} onChange={e => setEnseignant(e.target.value)} options={filteredEnseignants} placeholder="Tous les enseignants" />
+            <FilterSelect 
+              label="Enseignant" 
+              icon={MdPerson} 
+              value={selectedEnseignant} 
+              onChange={e => setEnseignant(e.target.value)} 
+              options={enseignants.map(e => ({ id: e.idutil, nom: `${e.prenom} ${e.nom}` }))} 
+              placeholder="Tous les enseignants" 
+            />
           </div>
         </motion.div>
 
@@ -184,7 +252,17 @@ const DashboardAdminExports = () => {
               <span className="bg-[#EF4444]/15 text-[#EF4444] text-[11px] px-2 py-0.5 rounded-full font-bold">PDF</span>
             </div>
             <div className="flex gap-3 mt-auto">
-              <ActionButton type="PDF" id={1} docName="Fiche individuelle" onClick={simulerExport} />
+              <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <ActionButton 
+                  type="PDF" 
+                  onClick={handleExportFichePDF} 
+                  disabled={!selectedEnseignant}
+                  loading={loadingId === "1PDF"}
+                />
+                {!selectedEnseignant && (
+                  <p className="text-[#7A8FAD] text-[11px] italic mt-1">Sélectionnez un enseignant pour activer cet export</p>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -206,8 +284,8 @@ const DashboardAdminExports = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-auto">
-              <ActionButton type="PDF" id={2} docName="État global des heures" onClick={simulerExport} />
-              <ActionButton type="Excel" id={2} docName="État global des heures" onClick={simulerExport} />
+              <ActionButton type="PDF" onClick={handleExportEtatGlobalPDF} loading={loadingId === "2PDF"} />
+              <ActionButton type="Excel" onClick={handleExportEtatGlobalExcel} loading={loadingId === "2Excel"} />
             </div>
           </motion.div>
 
@@ -229,8 +307,8 @@ const DashboardAdminExports = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-3 mt-auto">
-              <ActionButton type="PDF" id={3} docName="État comptabilité" onClick={simulerExport} />
-              <ActionButton type="Excel" id={3} docName="État comptabilité" onClick={simulerExport} />
+              <ActionButton type="PDF" onClick={handleExportComptaPDF} loading={loadingId === "3PDF"} />
+              <ActionButton type="Excel" onClick={handleExportComptaExcel} loading={loadingId === "3Excel"} />
             </div>
           </motion.div>
 
@@ -249,7 +327,7 @@ const DashboardAdminExports = () => {
               <span className="bg-[#10B981]/15 text-[#10B981] text-[11px] px-2 py-0.5 rounded-full font-bold">Excel</span>
             </div>
             <div className="flex gap-3 mt-auto">
-              <ActionButton type="Excel" id={4} docName="Export complet" onClick={simulerExport} />
+              <ActionButton type="Excel" onClick={() => simulerExport(4, "Excel", "Export complet")} loading={loadingId === "4Excel"} />
             </div>
           </motion.div>
         </div>
@@ -324,34 +402,6 @@ const DashboardAdminExports = () => {
           </div>
         </motion.div>
       </motion.main>
-
-      {/* TOAST NOTIFICATION */}
-      <AnimatePresence>
-        {toast.visible && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 z-[1000] flex items-center gap-3 px-5 py-3 rounded-[10px] text-white text-[14px] font-medium shadow-[0_4px_24px_rgba(0,0,0,0.4)] ${
-              toast.type === "success" ? "bg-[#10B981]" : "bg-[#EF4444]"
-            }`}
-          >
-            {toast.type === "success" ? <MdCheckCircle size={18} /> : <MdError size={18} />}
-            {toast.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Animation de rotation pour l'icône de chargement */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-      `}} />
     </div>
   );
 };
