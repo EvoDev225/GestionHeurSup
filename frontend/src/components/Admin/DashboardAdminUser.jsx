@@ -14,26 +14,13 @@ import {
   MdLock 
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import { deconnexion, getAllUsers, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
 import toast from "react-hot-toast";
-import { getCoutTotalHeures, getDerniersJournaux, getEnseignantsEnDepassement, getHeuresParDepartement, getHeuresParMois, getRepartitionHeures, getTotalHeures, getTotalUtilisateurs, getTotalUtilisateursParRole, getTotalUtilisateursParStat } from "../../fonctions/Stats.jsx";
-
-const fakeUsers = [
-  { id: 1, nom: "Jean", prenom: "François", email: "jean.francois@edu.ci", role: "Admin", statut: "Actif" },
-  { id: 2, nom: "Aminata", prenom: "Koné", email: "aminata.kone@edu.ci", role: "RH", statut: "Actif" },
-  { id: 3, nom: "Paul", prenom: "Bamba", email: "paul.bamba@edu.ci", role: "RH", statut: "Inactif" },
-];
-
-const fakeEnseignants = [
-  { id: 1, code: "ENS-001", nom: "Jean", prenom: "François", grade: "Maître de conférence", departement: "Informatique", type: "Permanent", heuresFaites: 248, heuresMax: 192, statut: "Actif" },
-  { id: 2, code: "ENS-002", nom: "Konan", prenom: "Charles", grade: "Maître de conférence", departement: "Informatique", type: "Permanent", heuresFaites: 248, heuresMax: 192, statut: "Actif" },
-  { id: 3, code: "ENS-003", nom: "Hervé", prenom: "Koffi", grade: "Assistant", departement: "Droit", type: "Vacataire", heuresFaites: 48, heuresMax: 192, statut: "Actif" },
-  { id: 4, code: "ENS-004", nom: "Moro", prenom: "Isaac", grade: "Professeur", departement: "Marketing", type: "Permanent", heuresFaites: 90, heuresMax: 192, statut: "Inactif" },
-  { id: 5, code: "ENS-005", nom: "Bamba", prenom: "Sory", grade: "Assistant", departement: "Comptabilité", type: "Vacataire", heuresFaites: 144, heuresMax: 192, statut: "Actif" },
-];
-
-const departements = ["Tous les départements", "Informatique", "Droit", "Marketing", "Comptabilité"];
-const grades = ["Tous les grades", "Professeur", "Maître de conférence", "Assistant"];
+import { 
+  getTotalUtilisateurs, 
+  getTotalUtilisateursParRole, 
+  getTotalUtilisateursParStat 
+} from "../../fonctions/Stats.jsx";
 
 // Variants pour les animations (uniformité avec DashboardMain)
 const containerVariants = {
@@ -50,10 +37,13 @@ const DashboardAdminUser = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("utilisateurs");
   const [search, setSearch] = useState("");
-  const [selectedDept, setSelectedDept] = useState("Tous les départements");
-  const [selectedGrade, setSelectedGrade] = useState("Tous les grades");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
+  const [users, setUsers] = useState([]);
+  const [totalUtilisateurs, setTotalUtilisateurs] = useState(null);
+  const [totalParRole, setTotalParRole] = useState([]);
+  const [totalParStat, setTotalParStat] = useState(null);
+
   // État Modale Contextuelle
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -71,22 +61,21 @@ const DashboardAdminUser = () => {
   }, [modalOpen]);
 
   // Logique de filtrage
-  const filteredUsers = fakeUsers.filter(u => 
+  const listeUsers = users.filter(u => u.role !== "enseignant");
+  const listeEnseignants = users.filter(u => u.role === "enseignant");
+
+  const filteredUsers = listeUsers.filter(u => 
     `${u.nom} ${u.prenom} ${u.email}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const filteredEnseignants = fakeEnseignants.filter(e => {
-    const matchSearch = `${e.nom} ${e.prenom} ${e.code}`.toLowerCase().includes(search.toLowerCase());
-    const matchDept = selectedDept === "Tous les départements" || e.departement === selectedDept;
-    const matchGrade = selectedGrade === "Tous les grades" || e.grade === selectedGrade;
-    return matchSearch && matchDept && matchGrade;
-  });
+  const filteredEnseignants = listeEnseignants.filter(e => 
+    `${e.nom} ${e.prenom}`.toLowerCase().includes(search.toLowerCase())
+  );
 
   // KPIs
-  const totalUsers = fakeUsers.length + fakeEnseignants.length;
-  const countPerm = fakeEnseignants.filter(e => e.type === "Permanent").length;
-  const countVac = fakeEnseignants.filter(e => e.type === "Vacataire").length;
-  const totalInactif = [...fakeUsers, ...fakeEnseignants].filter(x => x.statut === "Inactif").length;
+  const totalUsersKPI = totalUtilisateurs ?? "...";
+  const teachersCount = totalParRole.find(r => r.role === "enseignant")?.total ?? 0;
+  const inactifCount = totalParStat?.total_inactifs ?? "...";
 
   const handleActionClick = (item) => {
     setSelectedItem(item);
@@ -110,14 +99,23 @@ const DashboardAdminUser = () => {
           toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
         }
       };
-      const fetchStats=async ()=>{
+      const fetchStats = async () => {
         try {
-          const res = await getDerniersJournaux()
-          console.log(res)
+          const [allUsers, total, parRole, parStat] = await Promise.all([
+            getAllUsers(),
+            getTotalUtilisateurs(),
+            getTotalUtilisateursParRole(),
+            getTotalUtilisateursParStat(),
+          ]);
+          setUsers(allUsers.data ?? []);
+          setTotalUtilisateurs(total.data.total);
+          setTotalParRole(parRole.data ?? []);
+          setTotalParStat(parStat.data);
         } catch (error) {
-          console.error("Erreur lors de la récupération des statistiques :", error);
+          console.error("Erreur lors de la récupération des données :", error);
         }
-      }
+      };
+
       fetchUserData();
       fetchStats()
     },[]);
@@ -140,7 +138,7 @@ const DashboardAdminUser = () => {
             <MdPeople className="text-2xl text-[#0097FB]" />
             <span className="text-[#7A8FAD] text-[13px]">Utilisateurs</span>
           </div>
-          <h3 className="text-3xl font-bold">{totalUsers}</h3>
+          <h3 className="text-3xl font-bold">{totalUsersKPI}</h3>
           <p className="text-[#0097FB] text-[12px] mt-1 font-medium">Enregistrés</p>
         </div>
 
@@ -149,11 +147,8 @@ const DashboardAdminUser = () => {
             <MdSchool className="text-2xl text-[#0097FB]" />
             <span className="text-[#7A8FAD] text-[13px]">Enseignants</span>
           </div>
-          <h3 className="text-3xl font-bold">{fakeEnseignants.length}</h3>
-          <div className="text-[12px] mt-1 flex gap-2">
-            <span className="text-[#10B981]">{countPerm} Permanents</span>
-            <span className="text-[#F59E0B]">{countVac} Vacataires</span>
-          </div>
+          <h3 className="text-3xl font-bold">{teachersCount}</h3>
+          <p className="text-[#0097FB] text-[12px] mt-1 font-medium">Actifs</p>
         </div>
 
         <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl shadow-sm">
@@ -161,7 +156,7 @@ const DashboardAdminUser = () => {
             <MdBlock className="text-2xl text-[#EF4444]" />
             <span className="text-[#7A8FAD] text-[13px]">Inactif</span>
           </div>
-          <h3 className="text-3xl font-bold">{totalInactif}</h3>
+          <h3 className="text-3xl font-bold">{inactifCount}</h3>
           <p className="text-[#7A8FAD] text-[12px] mt-1">Ces derniers jours</p>
         </div>
       </div>
@@ -208,25 +203,6 @@ const DashboardAdminUser = () => {
                 className="w-full bg-white/5 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-[13px] outline-none focus:border-[#0097FB]/50 transition-all"
               />
             </div>
-            
-            {activeTab === "enseignants" && (
-              <>
-                <select 
-                  value={selectedDept}
-                  onChange={(e) => setSelectedDept(e.target.value)}
-                  className="bg-[#0A1628] border border-white/10 rounded-lg px-3 py-2 text-[13px] outline-none text-white cursor-pointer min-w-40"
-                >
-                  {departements.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-                <select 
-                  value={selectedGrade}
-                  onChange={(e) => setSelectedGrade(e.target.value)}
-                  className="bg-[#0A1628] border border-white/10 rounded-lg px-3 py-2 text-[13px] outline-none text-white cursor-pointer min-w-35"
-                >
-                  {grades.map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </>
-            )}
           </div>
         </div>
 
@@ -245,9 +221,8 @@ const DashboardAdminUser = () => {
                 ) : (
                   <>
                     <th className="px-4 py-3 font-semibold border-b border-white/5">Enseignant</th>
-                    <th className="px-4 py-3 font-semibold border-b border-white/5">Grade</th>
-                    <th className="px-4 py-3 font-semibold border-b border-white/5">Département</th>
-                    <th className="px-4 py-3 font-semibold border-b border-white/5">Heures</th>
+                    <th className="px-4 py-3 font-semibold border-b border-white/5">Email</th>
+                    <th className="px-4 py-3 font-semibold border-b border-white/5">Contact</th>
                   </>
                 )}
                 <th className="px-4 py-3 font-semibold border-b border-white/5 text-center">Statut</th>
@@ -258,18 +233,15 @@ const DashboardAdminUser = () => {
             {/* BODY */}
             <tbody className="divide-y divide-white/5">
               {(activeTab === "utilisateurs" ? filteredUsers : filteredEnseignants).map((item) => (
-                <tr key={`${activeTab}-${item.id}`} className="hover:bg-white/[0.02] transition-colors group">
+                <tr key={`${activeTab}-${item.idutil}`} className="hover:bg-white/[0.02] transition-colors group">
                   {/* Col 1 : Identité */}
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#0097FB]/15 text-[#0097FB] flex items-center justify-center font-bold text-[13px]">
-                        {getInitials(item.nom, item.prenom)}
+                        {getInitials(item.nom ?? "", item.prenom ?? "")}
                       </div>
                       <div>
                         <p className="text-[14px] font-medium leading-tight">{item.nom} {item.prenom}</p>
-                        {activeTab === "enseignants" && (
-                          <p className="text-[#7A8FAD] text-[12px]">{item.code}</p>
-                        )}
                       </div>
                     </div>
                   </td>
@@ -286,37 +258,19 @@ const DashboardAdminUser = () => {
                     </>
                   ) : (
                     <>
-                      <td className="px-4 py-4">
-                        <span className="bg-white/10 text-[#94A3B8] text-[11px] px-2.5 py-1 rounded-md border border-white/5 uppercase font-medium">
-                          {item.grade}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-white font-medium text-[13px]">{item.departement}</td>
-                      <td className="px-4 py-4 min-w-35">
-                        <div className="flex justify-between text-[11px] mb-1.5">
-                          <span className="font-semibold">{item.heuresFaites}H <span className="text-[#7A8FAD] font-normal">/ {item.heuresMax}H</span></span>
-                          {item.heuresFaites > item.heuresMax && (
-                            <span className="text-[#EF4444] font-bold">+{item.heuresFaites - item.heuresMax}H</span>
-                          )}
-                        </div>
-                        <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${item.heuresFaites > item.heuresMax ? "bg-[#EF4444]" : "bg-[#0097FB]"}`}
-                            style={{ width: `${Math.min((item.heuresFaites / item.heuresMax) * 100, 100)}%` }}
-                          />
-                        </div>
-                      </td>
+                      <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{item.email}</td>
+                      <td className="px-4 py-4 text-white font-medium text-[13px]">{item.contact}</td>
                     </>
                   )}
 
                   {/* Statut */}
                   <td className="px-4 py-4 text-center">
                     <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium ${
-                      item.statut === "Actif" 
+                      item.stat === "actif" 
                         ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20" 
                         : "bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/20"
                     }`}>
-                      {item.statut}
+                      {item.stat}
                     </span>
                   </td>
 

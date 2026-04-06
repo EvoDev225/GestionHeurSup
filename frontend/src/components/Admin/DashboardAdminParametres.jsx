@@ -29,6 +29,13 @@ const itemVariants = {
 const DashboardAdminParametres = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  useEffect(()=>{
+    try{
+      
+    }catch(error){
+
+    }
+  })
   
   // État Année Académique
   const [anneeDebut, setAnneeDebut] = useState("2025");

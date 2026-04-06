@@ -168,7 +168,7 @@ const DashboardMain = () => {
           setRepartition(rep.data);
           setJournaux(logs.data ?? []);
           
-console.log("u:", u, "h:", h, "c:", c, "dep:", dep, "mois:", mois, "dept:", dept, "rep:", rep, "logs:", logs);
+
         } catch (error) {
           console.error("Erreur lors de la récupération des statistiques :", error);
         }

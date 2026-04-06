@@ -17,23 +17,8 @@ import {
 import { deconnexion, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-
-const fakeMatieres = [
-  { id: 1, intitule: "Algorithmique", filiere: "Informatique", niveau: "L1", enseignant: "Jean François", statut: "Assignée" },
-  { id: 2, intitule: "Base de données", filiere: "Informatique", niveau: "L2", enseignant: "Konan Charles", statut: "Assignée" },
-  { id: 3, intitule: "Réseaux informatiques", filiere: "Informatique", niveau: "L3", enseignant: "Hervé Koffi", statut: "Assignée" },
-  { id: 4, intitule: "Droit des affaires", filiere: "Droit", niveau: "L2", enseignant: "Moro Isaac", statut: "Assignée" },
-  { id: 5, intitule: "Droit constitutionnel", filiere: "Droit", niveau: "L1", enseignant: null, statut: "Non assignée" },
-  { id: 6, intitule: "Marketing digital", filiere: "Marketing", niveau: "M1", enseignant: "Bamba Sory", statut: "Assignée" },
-  { id: 7, intitule: "Stratégie marketing", filiere: "Marketing", niveau: "M2", enseignant: null, statut: "Non assignée" },
-  { id: 8, intitule: "Comptabilité générale", filiere: "Comptabilité", niveau: "L1", enseignant: "Aminata Koné", statut: "Assignée" },
-  { id: 9, intitule: "Comptabilité analytique", filiere: "Comptabilité", niveau: "L3", enseignant: null, statut: "Non assignée" },
-  { id: 10, intitule: "Mathématiques financières", filiere: "Comptabilité", niveau: "M1", enseignant: "Paul Bamba", statut: "Assignée" },
-];
-
-const filieres = ["Toutes les filières", "Informatique", "Droit", "Marketing", "Comptabilité"];
-const niveaux = ["Tous les niveaux", "L1", "L2", "L3", "M1", "M2"];
-const statuts = ["Tous les statuts", "Assignée", "Non assignée"];
+import { getStatutMatieres } from "../../fonctions/Stats.jsx";
+import { getAllMatieres } from "../../fonctions/Matiere.jsx";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -51,7 +36,9 @@ const DashboardAdminMatiere = () => {
   const [search, setSearch] = useState("");
   const [selectedFiliere, setSelectedFiliere] = useState("Toutes les filières");
   const [selectedNiveau, setSelectedNiveau] = useState("Tous les niveaux");
-  const [selectedStatut, setSelectedStatut] = useState("Tous les statuts");
+
+  const [matieres, setMatieres] = useState([]);
+  const [statutMatieres, setStatutMatieres] = useState(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedMatiere, setSelectedMatiere] = useState(null);
@@ -68,24 +55,28 @@ const DashboardAdminMatiere = () => {
   }, [modalOpen]);
 
   // Calculs KPIs
-  const countFilieres = [...new Set(fakeMatieres.map(m => m.filiere))].length;
+  const countFilieres = [...new Set(matieres.map(m => m.filiere))].length;
   
-  const niveauStats = fakeMatieres.reduce((acc, m) => {
+  const niveauStats = matieres.reduce((acc, m) => {
     acc[m.niveau] = (acc[m.niveau] || 0) + 1;
     return acc;
   }, {});
-  const topNiveau = Object.keys(niveauStats).reduce((a, b) => niveauStats[a] > niveauStats[b] ? a : b, "—");
-  
-  const countSansEnseignant = fakeMatieres.filter(m => m.statut === "Non assignée").length;
+  const topNiveau = Object.keys(niveauStats).length > 0
+    ? Object.keys(niveauStats).reduce((a, b) => niveauStats[a] > niveauStats[b] ? a : b)
+    : "—";
+
+  const totalMatieres = (statutMatieres?.total_assignees ?? 0) + (statutMatieres?.total_non_assignees ?? 0);
 
   // Filtrage
-  const filteredMatieres = fakeMatieres.filter(m => {
+  const filteredMatieres = matieres.filter(m => {
     const matchSearch = `${m.intitule} ${m.filiere}`.toLowerCase().includes(search.toLowerCase());
     const matchFiliere = selectedFiliere === "Toutes les filières" || m.filiere === selectedFiliere;
     const matchNiveau = selectedNiveau === "Tous les niveaux" || m.niveau === selectedNiveau;
-    const matchStatut = selectedStatut === "Tous les statuts" || m.statut === selectedStatut;
-    return matchSearch && matchFiliere && matchNiveau && matchStatut;
+    return matchSearch && matchFiliere && matchNiveau;
   });
+
+  const filiereOptions = ["Toutes les filières", ...new Set(matieres.map(m => m.filiere))];
+  const niveauOptions = ["Tous les niveaux", ...new Set(matieres.map(m => m.niveau))];
 
   const handleActionClick = (matiere) => {
     setSelectedMatiere(matiere);
@@ -93,23 +84,36 @@ const DashboardAdminMatiere = () => {
   };
 
   const getInitials = (name) => name ? name.split(" ").map(n => n[0]).join("").toUpperCase() : "??";
-   useEffect(() => {
+  useEffect(() => {
       const fetchUserData = async () => {
         try {
           const res = await verifierAuthentification();
-          
           if(res.data.role !=="admin"){
             toast.error("Accès refusé. Redirection vers la page d'accueil.");
             await deconnexion()
             navigate('/')
           }
           
-        } catch (error) {
+        } catch (error){
           navigate("/")
           toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
         }
       };
+      const fetchStats = async () => {
+        try {
+          const [listeMatieres, statut] = await Promise.all([
+            getAllMatieres(),
+            getStatutMatieres(),
+          ]);
+          setMatieres(listeMatieres.data ?? []);
+          setStatutMatieres(statut.data);
+        } catch (error) {
+          console.error("Erreur lors de la récupération des matières :", error);
+        }
+      };
+
       fetchUserData();
+      fetchStats();
     },[]);
   return (
     <div className="min-h-screen bg-[#000814]">
@@ -142,11 +146,11 @@ const DashboardAdminMatiere = () => {
 
             <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
               <div className="flex items-center justify-between mb-2">
-                <MdWarning className="text-2xl text-[#F59E0B]" />
-                <span className="text-[#7A8FAD] text-[13px]">Sans enseignant</span>
+                <MdLayers className="text-2xl text-[#10B981]" />
+                <span className="text-[#7A8FAD] text-[13px]">Total matières</span>
               </div>
-              <h3 className="text-3xl font-bold">{countSansEnseignant}</h3>
-              <p className="text-[#7A8FAD] text-[12px] mt-1">Sans enseignant attribué</p>
+              <h3 className="text-3xl font-bold">{totalMatieres}</h3>
+              <p className="text-[#7A8FAD] text-[12px] mt-1">Matières enregistrées</p>
             </div>
         </div>
 
@@ -171,13 +175,10 @@ const DashboardAdminMatiere = () => {
                 />
               </div>
               <select value={selectedFiliere} onChange={(e) => setSelectedFiliere(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] flex-1 min-w-[140px] outline-none cursor-pointer">
-                {filieres.map(f => <option key={f} value={f}>{f}</option>)}
+                {filiereOptions.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
               <select value={selectedNiveau} onChange={(e) => setSelectedNiveau(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] flex-1 min-w-[140px] outline-none cursor-pointer">
-                {niveaux.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-              <select value={selectedStatut} onChange={(e) => setSelectedStatut(e.target.value)} className="bg-[#0D1B2A] border border-white/10 rounded-lg px-3 py-2 text-[13px] flex-1 min-w-[140px] outline-none cursor-pointer">
-                {statuts.map(s => <option key={s} value={s}>{s}</option>)}
+                {niveauOptions.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <p className="text-[13px] text-[#7A8FAD] mb-4">{filteredMatieres.length} matière(s) trouvée(s)</p>
@@ -190,38 +191,17 @@ const DashboardAdminMatiere = () => {
                     <th className="px-4 py-3 text-left font-medium">Intitulé</th>
                     <th className="px-4 py-3 text-left font-medium">Filière</th>
                     <th className="px-4 py-3 text-left font-medium">Niveau</th>
-                    <th className="px-4 py-3 text-left font-medium">Enseignant</th>
-                    <th className="px-4 py-3 text-center font-medium">Statut</th>
                     <th className="px-4 py-3 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   {filteredMatieres.length > 0 ? (
                     filteredMatieres.map((m) => (
-                      <tr key={m.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <tr key={m.idmat} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="px-4 py-4 text-[14px] font-medium text-white">{m.intitule}</td>
                         <td className="px-4 py-4 text-[13px] text-[#7A8FAD]">{m.filiere}</td>
                         <td className="px-4 py-4">
                           <span className="bg-[#0097FB]/10 text-[#0097FB] text-[12px] px-2.5 py-0.5 rounded-full font-medium">{m.niveau}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          {m.enseignant ? (
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-[#0097FB]/15 text-[#0097FB] flex items-center justify-center font-bold text-[11px]">
-                                {getInitials(m.enseignant)}
-                              </div>
-                              <span className="text-[13px]">{m.enseignant}</span>
-                            </div>
-                          ) : (
-                            <span className="bg-[#EF4444]/10 text-[#EF4444] text-[12px] px-3 py-1 rounded-full">Non assigné</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className={`text-[12px] px-3 py-1 rounded-full font-medium ${
-                            m.statut === "Assignée" ? "bg-[#10B981]/15 text-[#10B981]" : "bg-[#EF4444]/15 text-[#EF4444]"
-                          }`}>
-                            {m.statut}
-                          </span>
                         </td>
                         <td className="px-4 py-4 text-right">
                           <button onClick={() => handleActionClick(m)} className="text-[#7A8FAD] hover:text-white transition-colors">
@@ -232,7 +212,7 @@ const DashboardAdminMatiere = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="py-20 text-center">
+                      <td colSpan="4" className="py-20 text-center">
                         <div className="flex flex-col items-center gap-3">
                           <MdSearchOff className="text-5xl text-[#7A8FAD]" />
                           <p className="text-[15px] font-medium">Aucune matière trouvée</p>
@@ -268,16 +248,6 @@ const DashboardAdminMatiere = () => {
                 <MdEdit className="text-[#0097FB] text-lg" />
                 <span className="text-[13px]">Modifier</span>
               </div>
-
-              {selectedMatiere?.statut === "Non assignée" && (
-                <div 
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.04] rounded-lg cursor-pointer transition-colors"
-                  onClick={() => { console.log("Assigner", selectedMatiere); setModalOpen(false); }}
-                >
-                  <MdPersonAdd className="text-[#10B981] text-lg" />
-                  <span className="text-[13px] text-[#10B981]">Assigner enseignant</span>
-                </div>
-              )}
 
               <div 
                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.04] rounded-lg cursor-pointer transition-colors"
