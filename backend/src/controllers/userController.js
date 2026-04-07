@@ -93,23 +93,19 @@ const newUser = async (req,res)=>{
 }
 const updateUserForAdmin = async (req, res) => {
     const { id } = req.params;
-    const { nom, prenom, sexe, email, contact, role, mdp, grade, stat, statut, departement, tauxh } = req.body;
+    const { nom, prenom, sexe, email, contact, role, grade, stat, statut, departement, tauxh } = req.body;
 
     if (!id) {
         return res.status(400).json({ message: "ID utilisateur est requis" });
     }
 
-    let motdepasseHashed;
-    if (mdp) {
-        motdepasseHashed = await bcrypt.hash(mdp, 10);
-    }
     if(role==="admin" || role==="rh"){
         try {
         const [rows] = await db.query(
         `UPDATE utilisateur 
-        SET nom=?, prenom=?, sexe=?, email=?, contact=?, role=?, mdp=?, stat=?
+        SET nom=?, prenom=?, sexe=?, email=?, contact=?, role=?
         WHERE utilisateur.idutil=?`,
-        [nom, prenom, sexe, email, contact, role, motdepasseHashed, stat, id]
+        [nom, prenom, sexe, email, contact, role, id]
         );
         await logAction("UPDATE", `Mise à jour de l'utilisateur id ${id}`, db)
         return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows });
@@ -121,9 +117,9 @@ const updateUserForAdmin = async (req, res) => {
         try {
         const [rows] = await db.query(
         `UPDATE utilisateur 
-        SET nom=?, prenom=?, sexe=?, email=?, contact=?, role=?, mdp=?, stat=?
+        SET nom=?, prenom=?, sexe=?, email=?, contact=?, role=?
         WHERE utilisateur.idutil=?`,
-        [nom, prenom, sexe, email, contact, role, motdepasseHashed, stat, id]
+        [nom, prenom, sexe, email, contact, role, id]
         );
         const [rows2]= await db.query(`
             UPDATE enseignant SET grade=?, statut=?, departement=?, tauxh=?
@@ -177,6 +173,26 @@ const deleteUser = async (req,res)=>{
             return res.status(500).json({message:error.message})
         }
 }
+
+const toggleStatutUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.query(`SELECT stat FROM utilisateur WHERE idutil = ?`, [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+    const nouveauStatut = rows[0].stat === "actif" ? "inactif" : "actif";
+    await db.query(`UPDATE utilisateur SET stat = ? WHERE idutil = ?`, [nouveauStatut, id]);
+    await logAction("UPDATE", `Changement de statut de l'utilisateur id ${id} → ${nouveauStatut}`, db);
+    return res.status(200).json({ message: `Statut mis à jour : ${nouveauStatut}`, statut: nouveauStatut });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
 
 
 
@@ -311,5 +327,6 @@ module.exports = {
     Deconnexion,
     VerifierAuthentification,
     motdepasseOublie,
-    changerMotdepasse
+    changerMotdepasse,
+    toggleStatutUser
 }

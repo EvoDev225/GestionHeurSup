@@ -14,7 +14,7 @@ import {
   MdLock 
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { deconnexion, getAllUsers, verifierAuthentification } from "../../fonctions/utilisateur.jsx";
+import { deconnexion, getAllUsers, verifierAuthentification, newUser, updateUserForAdmin, deleteUser, toggleStatutUser } from "../../fonctions/Utilisateur.jsx";
 import toast from "react-hot-toast";
 import { 
   getTotalUtilisateurs, 
@@ -49,16 +49,103 @@ const DashboardAdminUser = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const modalRef = useRef(null);
 
-  // Fermeture modale au clic extérieur
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
-        setModalOpen(false);
-      }
+  // État Formulaire
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState("add"); // "add" | "edit"
+  const [formData, setFormData] = useState({
+    nom: "", prenom: "", sexe: "M", email: "", contact: "",
+    role: "admin", mdp: "",
+    // Champs enseignant (conditionnels)
+    grade: "", statut: "permanent", departement: "", tauxh: ""
+  });
+
+  const handleOpenAdd = () => {
+    setFormData({
+      nom: "", prenom: "", sexe: "M", email: "", contact: "",
+      role: "admin", mdp: "",
+      grade: "", statut: "permanent", departement: "", tauxh: ""
+    });
+    setFormMode("add");
+    setFormOpen(true);
+  };
+
+  const handleOpenEdit = (item) => {
+    setFormData({
+      nom: item.nom ?? "",
+      prenom: item.prenom ?? "",
+      sexe: item.sexe ?? "M",
+      email: item.email ?? "",
+      contact: item.contact ?? "",
+      role: item.role ?? "admin",
+      mdp: "",
+      grade: item.grade ?? "", 
+      statut: item.statut ?? "permanent", 
+      departement: item.departement ?? "", 
+      tauxh: item.tauxh ?? ""
+    });
+    setFormMode("edit");
+    setSelectedItem(item);
+    setModalOpen(false);
+    setFormOpen(true);
+  };
+
+  const handleSubmitForm = async () => {
+    const payload = {
+      nom: formData.nom,
+      prenom: formData.prenom,
+      sexe: formData.sexe,
+      email: formData.email,
+      contact: formData.contact,
+      role: formData.role,
+      ...(formMode === "add" && { mdp: formData.mdp }),
+      ...(formData.role === "enseignant" && {
+        grade: formData.grade,
+        statut: formData.statut,
+        departement: formData.departement,
+        tauxh: parseFloat(formData.tauxh)
+      })
     };
-    if (modalOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [modalOpen]);
+
+    try {
+      if (formMode === "add") {
+        await newUser(payload);
+        toast.success("Utilisateur ajouté avec succès !");
+      } else {
+        await updateUserForAdmin(selectedItem.idutil, payload);
+        toast.success("Utilisateur mis à jour avec succès !");
+      }
+      setFormOpen(false);
+      const res = await getAllUsers();
+      setUsers(res.data ?? []);
+    } catch (error) {
+      toast.error(error?.message ?? "Erreur lors de l'opération.");
+    }
+  };
+
+  const handleDelete = async (item) => {
+    try {
+      await deleteUser(item.idutil);
+      toast.success("Utilisateur supprimé avec succès !");
+      setModalOpen(false);
+      const res = await getAllUsers();
+      setUsers(res.data ?? []);
+    } catch (error) {
+      toast.error(error?.message ?? "Erreur lors de la suppression.");
+    }
+  };
+
+  const handleToggleStatut = async (item) => {
+    try {
+      await toggleStatutUser(item.idutil);
+      const label = item.stat === "actif" ? "désactivé" : "activé";
+      toast.success(`Compte ${label} avec succès !`);
+      setModalOpen(false);
+      const res = await getAllUsers();
+      setUsers(res.data ?? []);
+    } catch (error) {
+      toast.error("Erreur lors du changement de statut.");
+    }
+  };
 
   // Logique de filtrage
   const listeUsers = users.filter(u => u.role !== "enseignant");
@@ -167,7 +254,7 @@ const DashboardAdminUser = () => {
         {/* EN-TÊTE DU TABLEAU */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold">Liste des utilisateurs</h2>
-          <button className="bg-[#0097FB] hover:opacity-85 text-white rounded-lg px-4 py-2 text-[13px] flex items-center gap-2 transition-all">
+          <button onClick={handleOpenAdd} className="bg-[#0097FB] hover:opacity-85 text-white rounded-lg px-4 py-2 text-[13px] flex items-center gap-2 transition-all">
             <MdPersonAdd className="text-lg" />
             <span className="hidden sm:inline">Ajouter</span>
           </button>
@@ -315,7 +402,7 @@ const DashboardAdminUser = () => {
               
               <div 
                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-md cursor-pointer transition-colors group"
-                onClick={() => { console.log("Modifier", selectedItem); setModalOpen(false); }}
+                onClick={() => handleOpenEdit(selectedItem)}
               >
                 <MdEdit className="text-[#0097FB] text-lg" />
                 <span className="text-[13px] text-white">Modifier les infos</span>
@@ -323,7 +410,7 @@ const DashboardAdminUser = () => {
 
               <div 
                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#EF4444]/10 rounded-md cursor-pointer transition-colors group"
-                onClick={() => { console.log("Supprimer", selectedItem); setModalOpen(false); }}
+                onClick={() => handleDelete(selectedItem)}
               >
                 <MdDelete className="text-[#EF4444] text-lg" />
                 <span className="text-[13px] text-[#EF4444]">Supprimer le compte</span>
@@ -331,14 +418,141 @@ const DashboardAdminUser = () => {
 
               <div 
                 className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 rounded-md cursor-pointer transition-colors group"
-                onClick={() => { console.log("Verrouiller", selectedItem); setModalOpen(false); }}
+                onClick={() => handleToggleStatut(selectedItem)}
               >
                 <MdLock className="text-[#F59E0B] text-lg" />
-                <span className="text-[13px] text-[#F59E0B]">Verrouiller l'accès</span>
+                <span className="text-[13px] text-[#F59E0B]">
+                  {selectedItem?.stat === "actif" ? "Verrouiller l'accès" : "Activer le compte"}
+                </span>
               </div>
             </div>
           </motion.div>
         )}
+        </AnimatePresence>
+
+        {/* FORMULAIRE MODAL */}
+        <AnimatePresence>
+          {formOpen && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setFormOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-[#0D1B2A] border border-white/10 rounded-xl p-6 w-full max-w-lg shadow-[0_8px_32px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
+              >
+                <h3 className="text-[16px] font-bold mb-5">
+                  {formMode === "add" ? "Ajouter un utilisateur" : "Modifier l'utilisateur"}
+                </h3>
+
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#7A8FAD] text-[12px]">Nom</label>
+                      <input value={formData.nom} onChange={e => setFormData({...formData, nom: e.target.value})}
+                        className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#7A8FAD] text-[12px]">Prénom</label>
+                      <input value={formData.prenom} onChange={e => setFormData({...formData, prenom: e.target.value})}
+                        className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px]">Email</label>
+                    <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+                      className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px]">Contact</label>
+                    <input value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})}
+                      className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#7A8FAD] text-[12px]">Sexe</label>
+                      <select value={formData.sexe} onChange={e => setFormData({...formData, sexe: e.target.value})}
+                        className="bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none cursor-pointer">
+                        <option value="M">Masculin</option>
+                        <option value="F">Féminin</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#7A8FAD] text-[12px]">Rôle</label>
+                      <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}
+                        className="bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none cursor-pointer">
+                        <option value="admin">Admin</option>
+                        <option value="rh">RH</option>
+                        <option value="enseignant">Enseignant</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {formMode === "add" && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[#7A8FAD] text-[12px]">Mot de passe</label>
+                      <input type="password" value={formData.mdp} onChange={e => setFormData({...formData, mdp: e.target.value})}
+                        className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                    </div>
+                  )}
+
+                  {formData.role === "enseignant" && (
+                    <>
+                      <div className="border-t border-white/5 pt-4">
+                        <p className="text-[#0097FB] text-[12px] font-medium mb-3">Informations enseignant</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[#7A8FAD] text-[12px]">Grade</label>
+                          <input value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}
+                            placeholder="Ex: Maître de conférence"
+                            className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[#7A8FAD] text-[12px]">Statut</label>
+                          <select value={formData.statut} onChange={e => setFormData({...formData, statut: e.target.value})}
+                            className="bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none cursor-pointer">
+                            <option value="permanent">Permanent</option>
+                            <option value="vacataire">Vacataire</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[#7A8FAD] text-[12px]">Département</label>
+                          <input value={formData.departement} onChange={e => setFormData({...formData, departement: e.target.value})}
+                            placeholder="Ex: Informatique"
+                            className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[#7A8FAD] text-[12px]">Taux horaire (FCFA)</label>
+                          <input type="number" value={formData.tauxh} onChange={e => setFormData({...formData, tauxh: e.target.value})}
+                            placeholder="Ex: 5000"
+                            className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button onClick={() => setFormOpen(false)}
+                    className="text-[#7A8FAD] border border-white/10 rounded-lg px-4 py-2 text-[13px] hover:bg-white/5 transition-all">
+                    Annuler
+                  </button>
+                  <button onClick={handleSubmitForm}
+                    className="bg-[#0097FB] hover:opacity-85 text-white rounded-lg px-5 py-2 text-[13px] font-medium transition-all">
+                    {formMode === "add" ? "Ajouter" : "Enregistrer"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
       </motion.div>

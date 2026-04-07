@@ -99,3 +99,12 @@ export const changerMotdepasse = async (token, nouveauMdp) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const toggleStatutUser = async (id) => {
+  try {
+    const response = await axios.put(`${API_URL}/user/changeStatutUser/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

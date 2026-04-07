@@ -10,7 +10,8 @@ const {
     Deconnexion,
     VerifierAuthentification,
     changerMotdepasse,
-    motdepasseOublie} = require('../controllers/userController');
+    motdepasseOublie,
+    toggleStatutUser} = require('../controllers/userController');
 const verifierToken = require('../middlewares/verificationJeton');
 const r =express.Router();
 
@@ -20,6 +21,7 @@ r.get("/specificUser/:id",getUserById)
 r.post("/newUser",newUser)
 r.put("/updateUserForAdmin/:id",updateUserForAdmin)
 r.put("/updateUser/:id",updateSimpleUser)
+r.put("/changeStatutUser/:id",toggleStatutUser)
 r.delete("/deleteUser/:id",deleteUser)
 
 
