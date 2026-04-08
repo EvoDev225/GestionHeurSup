@@ -1,4 +1,5 @@
 const { db } = require('../config/db');
+const logAction = require('./journalHelper');
 
 const getAllMatieres = async (req, res) => {
     try {
@@ -35,8 +36,8 @@ const newMatiere = async (req, res) => {
     }
     try {
         const [rows] = await db.query(
-            'INSERT INTO matiere (intitule, filiere, niveau, volumhor, statut, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-            [intitule, filiere, niveau, volumhor, 'non_assignee']
+            'INSERT INTO matiere (intitule, filiere, niveau, volumhor, created_at) VALUES (?, ?, ?, ?, NOW())',
+            [intitule, filiere, niveau, volumhor]
         );
         return res.status(201).json({ message: "Matière ajoutée avec succès", data: rows });
     } catch (error) {
@@ -46,14 +47,14 @@ const newMatiere = async (req, res) => {
 
 const updateMatiere = async (req, res) => {
     const { id } = req.params;
-    const { intitule, filiere, niveau, volumhor, statut } = req.body;
-    if (!id || !intitule || !filiere || !niveau || !volumhor || !statut) {
+    const { intitule, filiere, niveau, volumhor } = req.body;
+    if (!id || !intitule || !filiere || !niveau || !volumhor ) {
         return res.status(400).json({ message: "Tous les champs sont requis pour la mise à jour" });
     }
     try {
         const [rows] = await db.query(
-            'UPDATE matiere SET intitule=?, filiere=?, niveau=?, volumhor=?, statut=? WHERE idmat=?',
-            [intitule, filiere, niveau, volumhor, statut, id]
+            'UPDATE matiere SET intitule=?, filiere=?, niveau=?, volumhor=? WHERE idmat=?',
+            [intitule, filiere, niveau, volumhor, id]
         );
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Matière non trouvée" });

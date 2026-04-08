@@ -294,16 +294,32 @@ const getTotalUtilisateursParStat = async (req, res) => {
     }
 };
 
-const getStatutMatieres = async (req, res) => {
+const getMatiereMaxVolumeHoraire = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT statut, COUNT(*) AS total FROM matiere GROUP BY statut');
-        if (rows.length === 0) return res.status(404).json({ message: "Aucune matière trouvée" });
-        const result = { total_assignees: 0, total_non_assignees: 0 };
-        rows.forEach(r => {
-            if (r.statut === 'assignee') result.total_assignees = r.total;
-            else if (r.statut === 'non_assignee') result.total_non_assignees = r.total;
-        });
-        return res.status(200).json({ message: "Statut des matières récupéré", data: result });
+        const [rows] = await db.query(
+            `SELECT intitule, filiere, niveau, volumhor 
+             FROM matiere 
+             ORDER BY volumhor DESC 
+             LIMIT 1`
+        );
+        if (rows.length === 0) return res.status(200).json({ data: null });
+        return res.status(200).json({ message: "Matière max volume récupérée", data: rows[0] });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getMatiereParNiveau = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            `SELECT niveau, COUNT(*) as total 
+             FROM matiere 
+             GROUP BY niveau 
+             ORDER BY total DESC 
+             LIMIT 1`
+        );
+        if (rows.length === 0) return res.status(200).json({ data: null });
+        return res.status(200).json({ message: "Niveau le plus chargé récupéré", data: rows[0] });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -521,7 +537,8 @@ module.exports = {
     getStatutHeures,
     getTotalUtilisateursParRole,
     getTotalUtilisateursParStat,
-    getStatutMatieres,
+    getMatiereMaxVolumeHoraire,
+    getMatiereParNiveau,
     getStatutAnneesAcademiques,
     getDerniersJournaux,
     getProfilEnseignant,

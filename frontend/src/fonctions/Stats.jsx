@@ -119,9 +119,18 @@ export const getTotalUtilisateursParStat = async () => {
     }
 };
 
-export const getStatutMatieres = async () => {
+export const getMatiereMaxVolumeHoraire = async () => {
     try {
-        const response = await axios.get(`${API_URL}/stats/statutMatieres`);
+        const response = await axios.get(`${API_URL}/stats/max-volume`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const getMatiereParNiveau = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/stats/par-niveau`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

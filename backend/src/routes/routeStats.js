@@ -13,7 +13,8 @@ const {
     getStatutHeures,
     getTotalUtilisateursParRole,
     getTotalUtilisateursParStat,
-    getStatutMatieres,
+    getMatiereMaxVolumeHoraire,
+    getMatiereParNiveau,
     getStatutAnneesAcademiques,
     getDerniersJournaux,
     getProfilEnseignant,
@@ -46,7 +47,8 @@ r.get("/statutHeures", getStatutHeures);
 // ============================================================
 r.get("/totalUtilisateursParRole", getTotalUtilisateursParRole);
 r.get("/totalUtilisateursParStat", getTotalUtilisateursParStat);
-r.get("/statutMatieres", getStatutMatieres);
+r.get("/max-volume", getMatiereMaxVolumeHoraire);
+r.get("/par-niveau", getMatiereParNiveau);
 r.get("/statutAnneesAcademiques", getStatutAnneesAcademiques);
 r.get("/derniersJournaux", getDerniersJournaux);
 
