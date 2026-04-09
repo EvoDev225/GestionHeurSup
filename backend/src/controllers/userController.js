@@ -18,17 +18,22 @@ const getAllUsers = async (req,res)=>{
         return res.status(500).json({message:error.message})
     }
 }
-const getAllEnseignant = async (req,res)=>{
-    try {
-        const [rows] = await db.query('SELECT * FROM utilisateur WHERE role="enseignant"')
-        if(rows.length===0){
-            return res.status(404).json({message:"Aucun utilisateur trouvé"})
-        }
-        return res.status(200).json({data:rows})
-    } catch (error) {
-        return res.status(500).json({message:error.message})
+const getAllEnseignant = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT e.idens, u.nom, u.prenom, u.role 
+      FROM enseignant e 
+      JOIN utilisateur u ON e.idutil = u.idutil
+      WHERE u.role = 'enseignant'
+    `);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Aucun enseignant trouvé" });
     }
-}
+    return res.status(200).json({ data: rows });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 const getUserById  = async (req,res)=>{
     const {id}= req.params
     if(!id){

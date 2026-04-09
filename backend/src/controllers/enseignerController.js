@@ -3,7 +3,26 @@ const logAction = require('./journalHelper');
 
 const getAllEnseigner = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM enseigner');
+        const [rows] = await db.query(`
+            SELECT
+                e.idenseigner,
+                e.idens,
+                u.nom,
+                u.prenom,
+                ens.referencens,
+                e.idmat,
+                m.intitule,
+                e.idanac,
+                e.date,
+                e.type,
+                e.duree,
+                e.salle,
+                e.observation
+            FROM enseigner e
+            JOIN enseignant ens ON e.idens = ens.idens
+            JOIN utilisateur u ON ens.idutil = u.idutil
+            JOIN matiere m ON e.idmat = m.idmat
+        `);
         if (rows.length === 0) {
             return res.status(404).json({ message: "Aucun enregistrement trouvé" });
         }
@@ -36,8 +55,8 @@ const newEnseigner = async (req, res) => {
     }
     try {
         const [rows] = await db.query(
-            'INSERT INTO enseigner (idens, idmat, idanac, date, type, duree, salle, observation, statut, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())',
-            [idens, idmat, idanac, date, type, duree, salle, observation || null, 'en_attente']
+            'INSERT INTO enseigner (idens, idmat, idanac, date, type, duree, salle, observation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+            [idens, idmat, idanac, date, type, duree, salle, observation || null]
         );
         await logAction("INSERT", `Ajout d'une séance ${type} pour l'enseignant id ${idens} — matière id ${idmat}`, db)
         return res.status(201).json({ message: "Enregistrement ajouté avec succès", data: rows });
@@ -48,14 +67,14 @@ const newEnseigner = async (req, res) => {
 
 const updateEnseigner = async (req, res) => {
     const { id } = req.params;
-    const { date, type, duree, salle, observation, statut } = req.body;
+    const { date, type, duree, salle, observation } = req.body;
     if ( !date || !type || !duree || !salle || !statut) {
-        return res.status(400).json({ message: "Tous les champs (date, type, duree, salle, statut) sont requis pour la mise à jour" });
+        return res.status(400).json({ message: "Tous les champs (date, type, duree, salle) sont requis pour la mise à jour" });
     }
     try {
         const [rows] = await db.query(
-            'UPDATE enseigner SET date=?, type=?, duree=?, salle=?, observation=?, statut=? WHERE idenseigner=?',
-            [date, type, duree, salle, observation || null, statut, id]
+            'UPDATE enseigner SET date=?, type=?, duree=?, salle=?, observation=? WHERE idenseigner=?',
+            [date, type, duree, salle, observation || null, id]
         );
         if (rows.affectedRows === 0) {
             return res.status(404).json({ message: "Enregistrement non trouvé" });

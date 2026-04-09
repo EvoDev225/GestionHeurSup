@@ -8,10 +8,12 @@ import {
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
 import { useNavigate } from 'react-router-dom';
-import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import { deconnexion, getAllEnseignant, verifierAuthentification } from '../../fonctions/Utilisateur';
 import { getTotalHeures, getHeuresParMois, getRepartitionHeures, getHeuresParEnseignant } from '../../fonctions/Stats';
+import { getAllMatieres } from '../../fonctions/Matiere';
+import { getAllAnac } from '../../fonctions/Anac';
 import { getAllEnseigner, newEnseigner, updateEnseigner, deleteEnseigner } from '../../fonctions/Enseigner';
-import axios from 'axios';
+import axios, { all } from 'axios';
 import toast from 'react-hot-toast';
 
 const DashboardRhSaisie = () => {
@@ -20,12 +22,14 @@ const DashboardRhSaisie = () => {
   const [loading, setLoading] = useState(true);
 
   // Données API
-  const [totalHeures, setTotalHeures] = useState("0");
+  const [totalHeures, setTotalHeures] = useState("");
   const [heuresParMois, setHeuresParMois] = useState([]);
   const [repartition, setRepartition] = useState([]);
   const [seances, setSeances] = useState([]);
-  const [enseignants, setEnseignants] = useState([]);
+  const [enseigner, setEnseigner] = useState([]);
   const [matieres, setMatieres] = useState([]);
+  const [allEnseignant,setAllEnseignant]=useState([])
+  const [anac,setAnac]=useState(null)
 
   // UI
   const [showModal, setShowModal] = useState(false);
@@ -35,11 +39,12 @@ const DashboardRhSaisie = () => {
 
   // État Formulaire
   const [formData, setFormData] = useState({
-    id_utilisateur: '',
-    id_matiere: '',
-    date_cours: '',
-    nb_heures: '',
-    type_heure: 'CM',
+    idens: '',
+    idmat: '',
+    idanac:anac ? anac.idanac : "",
+    date: '',
+    type: '',
+    duree:'',
     salle: '',
     observations: ''
   });
@@ -61,7 +66,7 @@ const DashboardRhSaisie = () => {
   
   // Reset formulaire
   const resetForm = () => {
-    setFormData({ id_utilisateur: '', id_matiere: '', date_cours: '', nb_heures: '', type_heure: 'CM', salle: '', observations: '' });
+    setFormData({ idens: '',idanac:anac.idanac, idmat: '', date: '', type: '', duree:'', salle: '', observations: '' });
     setFormErrors({});
     setEditTarget(null);
     setShowModal(false);
@@ -70,10 +75,12 @@ const DashboardRhSaisie = () => {
   // Handlers CRUD
   const handleSubmit = async () => {
     const errors = {};
-    if (!formData.id_utilisateur) errors.id_utilisateur = true;
-    if (!formData.id_matiere) errors.id_matiere = true;
-    if (!formData.date_cours) errors.date_cours = true;
-    if (!formData.nb_heures) errors.nb_heures = true;
+    if (!formData.idens) errors.idens = true;
+    if (!formData.idmat) errors.idmat = true;
+    if (!formData.idanac) errors.idanac = true;
+    if (!formData.date) errors.date = true;
+    if (!formData.type) errors.type = true;
+    if (!formData.duree) errors.type = true;
     if (!formData.salle) errors.salle = true;
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -82,9 +89,10 @@ const DashboardRhSaisie = () => {
     }
     try {
       if (editTarget) {
-        await updateEnseigner(editTarget.id_enseigner, formData);
+        await updateEnseigner(editTarget.idens, formData);
         toast.success("Séance mise à jour avec succès.");
       } else {
+        
         await newEnseigner(formData);
         toast.success("Séance ajoutée avec succès.");
       }
@@ -128,7 +136,6 @@ const DashboardRhSaisie = () => {
         const res = await getTotalHeures();
         setTotalHeures(res.data.total_heures);
       } catch { toast.error("Erreur heures totales."); }
-
       try { 
         const res = await getHeuresParMois();
         setHeuresParMois(res.data);
@@ -146,13 +153,40 @@ const DashboardRhSaisie = () => {
 
       try { 
         const res = await getAllEnseigner();
-        setEnseignants(res.data);
+        setEnseigner(res.data);
       } catch { toast.error("Erreur enseignants."); }
-
+      try {
+        const res = await getAllEnseignant();
+        setAllEnseignant(res.data);
+      } catch (error) {console.log("erreur",error)}
       try { 
-        const res = await axios.get('http://localhost:3000/matiere/allMatiere');
-        setMatieres(res.data.data);
+        const res = await getAllMatieres();
+        setMatieres(res.data);
+        
       } catch { toast.error("Erreur matières."); }
+    const loadAnac = async () => {
+    try {
+      const response = await getAllAnac()
+      
+      let anacEnCours = null;
+      if (Array.isArray(response.data)) {
+        anacEnCours = response.data.find(a => a.statut === 'en_cours');
+      } else {
+        anacEnCours = response.data;
+      }
+      
+      setAnac(anacEnCours);
+      
+      // Mettre à jour formData avec l'idanac
+      if (anacEnCours && anacEnCours.idanac) {
+        setFormData(prev => ({ ...prev, idanac: anacEnCours.idanac }));
+      }
+    } catch (error) {
+      console.error("Erreur chargement anac:", error);
+    }
+  };
+  
+  loadAnac();
       
       setLoading(false);
     };
@@ -178,20 +212,24 @@ const DashboardRhSaisie = () => {
         {/* EN-TÊTE DE PAGE */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-7">
           <div>
-            <h1 className="text-2xl md:text-[26px] font-bold text-white">Saisie des heures</h1> 
-            <p className="text-[#7A8FAD] text-sm mt-1">Enregistrement et gestion des séances</p>
+            <h1 className="text-2xl md:text-[26px] font-bold text-white">Saisie des heures</h1>
+            <p className="text-[#7A8FAD] text-sm mt-1">
+              Enregistrement et validation des séances · {anac?.libelle || ''}
+            </p>
           </div>
-          <div className="bg-[#7B2FBE]/15 border border-[#7B2FBE]/30 text-[#7B2FBE] text-[13px] font-bold py-1.5 px-4 rounded-full flex items-center gap-2">
-            <MdSupervisorAccount size={16} />
-            <span>RH</span>
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="bg-[#7B2FBE]/15 border border-[#7B2FBE]/30 text-[#7B2FBE] text-[13px] font-bold py-1.5 px-4 rounded-full flex items-center gap-2">
+              <MdSupervisorAccount size={16} />
+              <span>RH</span>
+            </div>
+            <button
+              onClick={() => { resetForm(); setShowModal(true); }}
+              className="bg-[#0097FB] text-white text-[13px] font-medium py-2 px-4 rounded-lg flex items-center gap-2 hover:opacity-85 transition-all"
+            >
+              <MdAdd size={18} />
+              Ajouter une séance
+            </button>
           </div>
-          <button
-            onClick={() => { resetForm(); setShowModal(true); }}
-            className="bg-[#0097FB] text-white text-[13px] font-medium py-2 px-4 rounded-lg flex items-center gap-2 hover:opacity-85 transition-all ml-auto"
-          >
-            <MdAdd size={18} />
-            Ajouter une séance
-          </button>
         </div>
 
         {/* SECTION 1 — KPI CARDS */}
@@ -331,9 +369,9 @@ const DashboardRhSaisie = () => {
                                   setEditTarget(s);
                                   setFormData({
                                     id_utilisateur: s.id_utilisateur,
-                                    id_matiere: s.id_matiere,
-                                    date_cours: s.date_cours,
-                                    nb_heures: s.nb_heures,
+                                    idmat: s.idmat,
+                                    date: s.date,
+                                    type: s.type,
                                     type_heure: s.type_heure,
                                     salle: s.salle,
                                     observations: s.observations
@@ -379,8 +417,9 @@ const DashboardRhSaisie = () => {
 
     {/* MODALE SAISIE / MODIFICATION */}
     <AnimatePresence>
-      {showModal && ( 
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+     {
+      showModal && (
+         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
               className="bg-[#0D1B2A] border border-white/10 rounded-2xl p-7 w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-2xl"
@@ -396,52 +435,71 @@ const DashboardRhSaisie = () => {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">ENSEIGNANT</label> 
                   <select
-                    value={formData.id_utilisateur}
-                    onChange={(e) => setFormData({ ...formData, id_utilisateur: e.target.value, id_matiere: "" })}
-                    className={`bg-white/[0.04] border ${formErrors.id_utilisateur ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    value={formData.idens}
+                    onChange={(e) => setFormData({ ...formData, idens: e.target.value })}
+                    className={`bg-white/[0.04] border ${formErrors.idens ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
                   >
-                    <option value="">Sélectionner un enseignant</option>
-                    {enseignants.map(e => <option key={e.id_utilisateur} value={e.id_utilisateur}>{e.prenom} {e.nom} ({e.ref_utilisateur})</option>)}
+                    <option value="" className='text-black'>Sélectionner un enseignant</option>
+                    {
+                      allEnseignant &&  (
+                        allEnseignant.map((e)=>(
+                          <option className='text-black' key={e.idens} value={e.idens}>
+                            {e.prenom} {e.nom}
+                          </option>
+                        ))
+                      )
+                    }
                   </select>
                   {formErrors.id_utilisateur && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                </div>
+                <div className='hidden'>
+                      <input type="text" value={formData.idanac || ''} />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">MATIÈRE</label> 
                   <select
-                    disabled={!formData.id_utilisateur}
-                    value={formData.id_matiere}
-                    onChange={(e) => setFormData({ ...formData, id_matiere: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.id_matiere ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+
+                    value={formData.idmat}
+                    onChange={(e)=>setFormData({...formData, idmat: e.target.value})}
+                    className={`bg-white/[0.04] border rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    <option value="">{formData.id_utilisateur ? "Sélectionner une matière" : "Sélectionnez un enseignant"}</option>
-                    {matieres.filter(m => m.id_utilisateur === Number(formData.id_utilisateur)).map(m => (
-                      <option key={m.id_matiere} value={m.id_matiere}>{m.intitule}</option>
-                    ))}
+                    <option value="" className='text-black'>Sélectionner une matière</option>
+                    {
+                      matieres && matieres.length > 0 ? (
+                        matieres.map((m) => (
+                          <option className='text-black' key={m.idmat} value={m.idmat}>
+                            {m.intitule}
+                          </option>
+                        ))
+                        ) : (
+                            <option value="" disabled>Chargement des matières...</option>
+                      )
+}
                   </select>
-                  {formErrors.id_matiere && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  {formErrors.idmat && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DATE DU COURS</label> 
                   <input
                     type="date"
-                    value={formData.date_cours}
-                    onChange={(e) => setFormData({ ...formData, date_cours: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.date_cours ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all [color-scheme:dark]`}
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className={`bg-white/[0.04] border ${formErrors.date ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all [color-scheme:dark]`}
                   />
-                  {formErrors.date_cours && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  {formErrors.date && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DURÉE (HEURES)</label> 
                   <input
                     type="number" min="0.5" step="0.5" placeholder="Ex: 2"
-                    value={formData.nb_heures}
-                    onChange={(e) => setFormData({ ...formData, nb_heures: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.nb_heures ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    value={formData.duree}
+                    onChange={(e) => setFormData({ ...formData, duree: e.target.value })}
+                    className={`bg-white/[0.04] border ${formErrors.duree ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
                   />
-                  {formErrors.nb_heures && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  {formErrors.duree && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
                 </div>
 
                 <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -450,9 +508,9 @@ const DashboardRhSaisie = () => {
                     {["CM", "TD", "TP"].map(type => (
                       <button
                         key={type}
-                        onClick={() => setFormData({ ...formData, type_heure: type })}
+                        onClick={() => setFormData({ ...formData, type: type })}
                         className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
-                          formData.type_heure === type
+                          formData.type === type
                             ? 'bg-[#0097FB] text-white border-[#0097FB]'
                             : 'bg-white/[0.04] border-white/10 text-[#7A8FAD] hover:bg-[#0097FB]/10 hover:text-[#0097FB]'
                         }`}
@@ -501,7 +559,8 @@ const DashboardRhSaisie = () => {
               </div>
             </motion.div>
           </div>
-        )}
+      )
+     }
       </AnimatePresence>
     </>
   );
