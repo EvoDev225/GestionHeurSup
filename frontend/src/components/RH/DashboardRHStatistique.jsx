@@ -21,16 +21,23 @@ import {
   MdAccessTime,
   MdPeople,
   MdWarning,
-  MdCheckCircle,
   MdSearch,
   MdTableChart,
-  MdArrowDownward,
   MdSearchOff
 } from 'react-icons/md';
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
 import { useNavigate } from 'react-router-dom';
-import { deconnexion, verifierAuthentification } from '../../fonctions/utilisateur';
+import { deconnexion, verifierAuthentification } from '../../fonctions/Utilisateur';
+import {
+  getTotalHeures,
+  getMoyenneHeuresParEnseignant,
+  getTauxDepassement,
+  getHeuresParMois,
+  getRepartitionHeures,
+  getHeuresParDepartement,
+  getTop5Enseignants
+} from '../../fonctions/Stats';
 import toast from 'react-hot-toast';
 
 // Enregistrement Chart.js
@@ -55,38 +62,6 @@ const moisOptions = [
 ];
 const departements = ["Tous les départements", "Informatique", "Droit", "Marketing", "Comptabilité"];
 const statutsFiltres = ["Tous les statuts", "En règle", "Dépassement", "Sous quota"];
-
-const statsGlobales = {
-  totalHeures: 18640,
-  moyenneParEns: 186,
-  nbEnseignants: 102,
-  nbDepassements: 18,
-  tauxDepassement: 18,
-  heuresValidees: 17150,
-  heuresEnAttente: 1490,
-  tauxValidation: 92,
-};
-
-const evolutionMensuelle = {
-  labels: ["Sep", "Oct", "Nov", "Déc", "Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû"],
-  data: [1200, 1850, 2100, 800, 1950, 2050, 2200, 1800, 2100, 1600, 700, 290],
-};
-
-const repartitionTypes = { CM: 7820, TD: 6140, TP: 4680 };
-
-const heuresParDept = {
-  labels: ["Informatique", "Droit", "Marketing", "Comptabilité"],
-  data: [5840, 4200, 4100, 4500],
-};
-
-const top5Enseignants = [
-  { nom: "Konan Charles", dept: "Informatique", heures: 312, prevues: 192 },
-  { nom: "Jean François", dept: "Informatique", heures: 278, prevues: 192 },
-  { nom: "Bamba Sory", dept: "Comptabilité", heures: 245, prevues: 192 },
-  { nom: "Hervé Koffi", dept: "Droit", heures: 228, prevues: 192 },
-  { nom: "Moro Isaac", dept: "Marketing", heures: 215, prevues: 192 },
-];
-
 const recapEnseignants = [
   { id: 1, code: "ENS-001", nom: "Jean François", dept: "Informatique", cm: 120, td: 90, tp: 68, prevues: 192, statut: "Dépassement" },
   { id: 2, code: "ENS-002", nom: "Konan Charles", dept: "Informatique", cm: 140, td: 100, tp: 72, prevues: 192, statut: "Dépassement" },
@@ -101,13 +76,31 @@ const recapEnseignants = [
 const DashboardRHStatistique = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedAnnee, setAnnee] = useState("2025-2026");
   const [selectedMois, setMois] = useState("Toute l'année");
   
-  // États Filtres Tableau
+  // Données API
+  const [totalHeures, setTotalHeures] = useState("0");
+  const [moyenne, setMoyenne] = useState({ total_enseignants: 0, moyenne_heures: "0" });
+  const [tauxDepassement, setTauxDepassement] = useState({ nb_depassement: 0, total_enseignants: 0, taux_depassement: 0 });
+  const [heuresParMois, setHeuresParMois] = useState([]);
+  const [repartition, setRepartition] = useState([]);
+  const [heuresDept, setHeuresDept] = useState([]);
+  const [top5, setTop5] = useState([]);
+
+  // Filtres tableau récapitulatif
   const [searchRecap, setSearchRecap] = useState("");
   const [filterDept, setFilterDept] = useState("Tous les départements");
   const [filterStatut, setFilterStatut] = useState("Tous les statuts");
+
+  const formatHeures = (valeur) => {
+    const total = parseFloat(valeur || 0);
+    const h = Math.floor(total);
+    const min = Math.round((total - h) * 60);
+    return `${h}H${min.toString().padStart(2, '0')}`;
+  };
+  const getInitials = (name) => name?.split(" ").map(n => n[0]).join("").toUpperCase() || "??";
 
   const filteredRecap = recapEnseignants.filter(e => {
     const matchSearch = `${e.nom} ${e.code}`.toLowerCase().includes(searchRecap.toLowerCase());
@@ -116,15 +109,13 @@ const DashboardRHStatistique = () => {
     return matchSearch && matchDept && matchStatut;
   });
 
-  const getInitials = (name) => name.split(" ").map(n => n[0]).join("").toUpperCase();
-
   // --- CONFIG CHARTS ---
   
   const evolutionData = {
-    labels: evolutionMensuelle.labels,
+    labels: heuresParMois.map(m => m.nom_mois),
     datasets: [{
       label: "Heures saisies",
-      data: evolutionMensuelle.data,
+      data: heuresParMois.map(m => parseFloat(m.total_heures)),
       borderColor: "#0097FB",
       backgroundColor: (context) => {
         const ctx = context.chart.ctx;
@@ -141,18 +132,18 @@ const DashboardRHStatistique = () => {
   };
 
   const doughnutData = {
-    labels: ["CM", "TD", "TP"],
+    labels: repartition.map(r => r.type),
     datasets: [{
-      data: [repartitionTypes.CM, repartitionTypes.TD, repartitionTypes.TP],
+      data: repartition.map(r => parseFloat(r.total_heures)),
       backgroundColor: ["#0097FB", "#10B981", "#F59E0B"],
       borderWidth: 0,
     }],
   };
 
   const deptData = {
-    labels: heuresParDept.labels,
+    labels: heuresDept.map(d => d.departement),
     datasets: [{
-      data: heuresParDept.data,
+      data: heuresDept.map(d => parseFloat(d.total_heures)),
       backgroundColor: "rgba(0, 151, 251, 0.7)",
       borderColor: "#0097FB",
       borderWidth: 1,
@@ -161,17 +152,21 @@ const DashboardRHStatistique = () => {
   };
 
   const top5Data = {
-    labels: top5Enseignants.map(e => e.nom),
+    labels: top5.map(e => `${e.prenom} ${e.nom}`),
     datasets: [
       {
         label: "Heures effectuées",
-        data: top5Enseignants.map(e => e.heures),
-        backgroundColor: top5Enseignants.map(e => e.heures > e.prevues ? "rgba(239, 68, 68, 0.7)" : "rgba(0, 151, 251, 0.7)"),
+        data: top5.map(e => parseFloat(e.total_heures)),
+        backgroundColor: top5.map(e =>
+          parseFloat(e.total_heures) > parseFloat(e.volumhor)
+            ? "rgba(239, 68, 68, 0.7)"
+            : "rgba(0, 151, 251, 0.7)"
+        ),
         borderRadius: 4,
       },
       {
         label: "Volume prévu",
-        data: top5Enseignants.map(e => e.prevues),
+        data: top5.map(e => parseFloat(e.volumhor)),
         backgroundColor: "rgba(255, 255, 255, 0.06)",
         borderRadius: 4,
       }
@@ -187,24 +182,47 @@ const DashboardRHStatistique = () => {
       y: { grid: { color: "rgba(255, 255, 255, 0.04)" }, ticks: { color: "#7A8FAD", font: { size: 11 } } },
     },
   };
+
   useEffect(() => {
-    const fetchUserData = async () => {
+    const init = async () => {
       try {
         const res = await verifierAuthentification();
-        if(res.data.role !=="rh"){
-          toast.error("Accès refusé. Redirection vers la page d'accueil.");
-          await deconnexion()
-          navigate("/")
-          
+        if (res.data.role !== "rh") {
+          toast.error("Accès refusé.");
+          await deconnexion();
+          navigate("/");
+          return;
         }
-      } catch (error) {
-        navigate("/")
-        toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
+      } catch {
+        navigate("/");
+        return;
       }
-    };
-    fetchUserData();
-  },[]);
 
+      try { const res = await getTotalHeures(); setTotalHeures(res.data.total_heures); }
+      catch { toast.error("Erreur heures totales."); }
+
+      try { const res = await getMoyenneHeuresParEnseignant(); setMoyenne(res.data); }
+      catch { toast.error("Erreur moyenne."); }
+
+      try { const res = await getTauxDepassement(); setTauxDepassement(res.data); }
+      catch { toast.error("Erreur taux dépassement."); }
+
+      try { const res = await getHeuresParMois(); setHeuresParMois(res.data); }
+      catch { toast.error("Erreur heures par mois."); }
+
+      try { const res = await getRepartitionHeures(); setRepartition(res.data); }
+      catch { toast.error("Erreur répartition."); }
+
+      try { const res = await getHeuresParDepartement(); setHeuresDept(res.data); }
+      catch { toast.error("Erreur départements."); }
+
+      try { const res = await getTop5Enseignants(); setTop5(res.data); }
+      catch { toast.error("Erreur top 5."); }
+
+      setLoading(false);
+    };
+    init();
+  }, [navigate]);
 
   return (
     <div className="bg-[#000814] min-h-screen">
@@ -212,6 +230,12 @@ const DashboardRHStatistique = () => {
       <Navbar onMenuClick={() => setIsOpen(!isOpen)} userName="Aminata Koné" userRole="Responsable RH" />
 
       <main className="md:ml-57.5 pt-16 p-6 transition-all duration-300 min-h-screen">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-[#0097FB] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <>
         
         {/* EN-TÊTE */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -252,13 +276,13 @@ const DashboardRHStatistique = () => {
         </div>
 
         {/* SECTION 1 — KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
           <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
               <MdAccessTime className="text-[#0097FB]" size={20} />
               <span className="text-[#7A8FAD] text-[13px]">Heures effectuées</span>
             </div>
-            <div className="text-white text-[28px] font-bold">{statsGlobales.totalHeures}H</div>
+            <div className="text-white text-[28px] font-bold">{formatHeures(totalHeures)}</div>
             <div className="text-[#7A8FAD] text-[12px]">Sur l'année {selectedAnnee}</div>
             <div className="mt-3 w-full bg-white/5 h-[3px] rounded-full overflow-hidden">
               <div className="bg-[#0097FB] h-full rounded-full" style={{ width: '88%' }}></div>
@@ -270,10 +294,10 @@ const DashboardRHStatistique = () => {
               <MdPeople className="text-[#0097FB]" size={20} />
               <span className="text-[#7A8FAD] text-[13px]">Moyenne / enseignant</span>
             </div>
-            <div className="text-white text-[28px] font-bold">{statsGlobales.moyenneParEns}H</div>
+            <div className="text-white text-[28px] font-bold">{formatHeures(moyenne.moyenne_heures)}</div>
             <div className="flex items-center gap-1.5 mt-2 text-[#7A8FAD] text-[12px]">
               <MdPeople size={14} />
-              <span>{statsGlobales.nbEnseignants} enseignants</span>
+              <span>{moyenne.total_enseignants} enseignants</span>
             </div>
           </div>
 
@@ -282,21 +306,13 @@ const DashboardRHStatistique = () => {
               <MdWarning className="text-[#EF4444]" size={20} />
               <span className="text-[#7A8FAD] text-[13px]">Taux dépassement</span>
             </div>
-            <div className="text-[#EF4444] text-[28px] font-bold">{statsGlobales.tauxDepassement}%</div>
-            <div className="text-[#7A8FAD] text-[12px]">{statsGlobales.nbDepassements} enseignants en dépassement</div>
-            <div className="mt-2 inline-block bg-[#EF4444]/12 text-[#EF4444] text-[11px] px-2 py-0.5 rounded-full">Attention</div>
-          </div>
-
-          <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <MdCheckCircle className="text-[#10B981]" size={20} />
-              <span className="text-[#7A8FAD] text-[13px]">Heures validées</span>
-            </div>
-            <div className="text-[#10B981] text-[28px] font-bold">{statsGlobales.tauxValidation}%</div>
-            <div className="flex gap-2 mt-2">
-              <span className="bg-[#10B981]/12 text-[#10B981] text-[11px] px-2 py-0.5 rounded-full font-medium">{statsGlobales.heuresValidees}H validées</span>
-              <span className="bg-[#F59E0B]/12 text-[#F59E0B] text-[11px] px-2 py-0.5 rounded-full font-medium">{statsGlobales.heuresEnAttente}H en attente</span>
-            </div>
+            <div className="text-[#EF4444] text-[28px] font-bold">{tauxDepassement.taux_depassement}%</div>
+            <div className="text-[#7A8FAD] text-[12px]">{tauxDepassement.nb_depassement} enseignants en dépassement</div>
+            {tauxDepassement.nb_depassement > 0 && (
+              <div className="mt-2 inline-block bg-[#EF4444]/12 text-[#EF4444] text-[11px] px-2 py-0.5 rounded-full">
+                Attention
+              </div>
+            )}
           </div>
         </div>
 
@@ -325,14 +341,19 @@ const DashboardRHStatistique = () => {
                 options={{ ...chartOptions, cutout: '62%', plugins: { legend: { position: 'right', labels: { color: '#7A8FAD', boxWidth: 10 } } } }} 
               />
               <div className="absolute top-[50%] left-[34%] transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                <div className="text-white text-base font-bold">{repartitionTypes.CM + repartitionTypes.TD + repartitionTypes.TP}H</div>
+                <div className="text-white text-base font-bold">
+                  {formatHeures(repartition.reduce((acc, r) => acc + parseFloat(r.total_heures), 0))}
+                </div>
                 <div className="text-[#7A8FAD] text-[11px]">total</div>
               </div>
             </div>
             <div className="flex justify-around mt-4 pt-4 border-t border-white/5 text-[12px] text-[#7A8FAD]">
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-[#0097FB]" /> CM · 7820H · 42%</span>
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-[#10B981]" /> TD · 6140H · 33%</span>
-              <span className="flex items-center gap-1.5"><i className="w-2 h-2 rounded-full bg-[#F59E0B]" /> TP · 4680H · 25%</span>
+              {repartition.map((r, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  <i className="w-2 h-2 rounded-full" style={{ backgroundColor: i === 0 ? "#0097FB" : i === 1 ? "#10B981" : "#F59E0B" }} />
+                  {r.type} · {formatHeures(r.total_heures)}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -367,6 +388,10 @@ const DashboardRHStatistique = () => {
 
         {/* SECTION 3 — TABLEAU RÉCAPITULATIF */}
         <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl shadow-sm">
+          {/* TODO: remplacer recapEnseignants par un appel API dédié quand disponible
+              Données nécessaires par enseignant : nom, prenom, ref_utilisateur, departement,
+              heures_cm, heures_td, heures_tp, total_heures_eq, volumhor, statut (calculé)
+              Endpoint suggéré : GET /stats/getRecapEnseignants */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
             <div className="flex items-center gap-2.5">
               <MdTableChart className="text-[#0097FB]" size={18} />
@@ -458,9 +483,7 @@ const DashboardRHStatistique = () => {
                             e.statut === "En règle" ? "bg-[#10B981]/12 text-[#10B981]" : 
                             e.statut === "Dépassement" ? "bg-[#EF4444]/12 text-[#EF4444]" : "bg-[#F59E0B]/12 text-[#F59E0B]"
                           }`}>
-                            {e.statut === "En règle" && <MdCheckCircle size={12} />}
                             {e.statut === "Dépassement" && <MdWarning size={12} />}
-                            {e.statut === "Sous quota" && <MdArrowDownward size={12} />}
                             {e.statut}
                           </div>
                         </td>
@@ -482,6 +505,8 @@ const DashboardRHStatistique = () => {
             </table>
           </div>
         </div>
+        </>
+        )}
       </main>
     </div>
   );
