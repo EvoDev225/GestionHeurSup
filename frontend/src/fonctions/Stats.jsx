@@ -11,24 +11,6 @@ export const getTotalUtilisateurs = async () => {
     }
 };
 
-export const getTotalHeures = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/stats/totalHeures`);
-        return response.data;
-    } catch (error) {
-        throw error.response?.data || error.message;
-    }
-};
-
-export const getCoutTotalHeures = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/stats/coutTotalHeures`);
-        return response.data;
-    } catch (error) {
-        throw error.response?.data || error.message;
-    }
-};
-
 export const getHeuresParEnseignant = async () => {
     try {
         const response = await axios.get(`${API_URL}/stats/heuresParEnseignant`);
@@ -38,18 +20,36 @@ export const getHeuresParEnseignant = async () => {
     }
 };
 
-export const getHeuresParMois = async () => {
+export const getHeuresParDepartement = async () => {
     try {
-        const response = await axios.get(`${API_URL}/stats/heuresParMois`);
+        const response = await axios.get(`${API_URL}/stats/heuresParDepartement`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
     }
 };
 
-export const getHeuresParDepartement = async () => {
+// Fonctions ajoutées ou vérifiées selon la tâche
+export const getTotalHeures = async () => {
     try {
-        const response = await axios.get(`${API_URL}/stats/heuresParDepartement`);
+        const response = await axios.get(`${API_URL}/stats/totalHeures`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+export const getCoutTotalHeures = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/stats/coutTotalHeures`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const getHeuresParMois = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/stats/heuresParMois`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

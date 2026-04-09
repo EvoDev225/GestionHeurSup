@@ -18,6 +18,17 @@ const getAllUsers = async (req,res)=>{
         return res.status(500).json({message:error.message})
     }
 }
+const getAllEnseignant = async (req,res)=>{
+    try {
+        const [rows] = await db.query('SELECT * FROM utilisateur WHERE role="enseignant"')
+        if(rows.length===0){
+            return res.status(404).json({message:"Aucun utilisateur trouvé"})
+        }
+        return res.status(200).json({data:rows})
+    } catch (error) {
+        return res.status(500).json({message:error.message})
+    }
+}
 const getUserById  = async (req,res)=>{
     const {id}= req.params
     if(!id){
@@ -328,5 +339,6 @@ module.exports = {
     VerifierAuthentification,
     motdepasseOublie,
     changerMotdepasse,
-    toggleStatutUser
+    toggleStatutUser,
+    getAllEnseignant
 }

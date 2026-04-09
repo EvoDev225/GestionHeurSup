@@ -9,7 +9,14 @@ export const getAllUsers = async () => {
         throw error.response?.data || error.message;
     }
 };
-
+export const getAllEnseingnant=async ()=>{
+    try {
+        const reponse = await axios.get(`${API_URL}/user/toutEnseignant`);
+        return reponse.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+}
 export const getUserById = async (id) => {
     try {
         const response = await axios.get(`${API_URL}/user/specificUser/${id}`);

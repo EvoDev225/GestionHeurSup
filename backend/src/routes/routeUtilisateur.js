@@ -11,13 +11,16 @@ const {
     VerifierAuthentification,
     changerMotdepasse,
     motdepasseOublie,
-    toggleStatutUser} = require('../controllers/userController');
+    toggleStatutUser,
+    getAllEnseignant} = require('../controllers/userController');
 const verifierToken = require('../middlewares/verificationJeton');
 const r =express.Router();
 
 // CRUD des utilisateurs
 r.get("/allUser",getAllUsers)
 r.get("/specificUser/:id",getUserById)
+r.get("/toutEnseignant",getAllEnseignant)
+r.get("/user/:id",getUserById)
 r.post("/newUser",newUser)
 r.put("/updateUserForAdmin/:id",updateUserForAdmin)
 r.put("/updateUser/:id",updateSimpleUser)
