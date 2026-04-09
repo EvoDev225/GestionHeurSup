@@ -354,13 +354,7 @@ const DashboardAdminMatiere = () => {
                             </button>
 
                             {/* Bouton Actions (modal choix) */}
-                            <button
-                              onClick={() => handleOpenActionModal(m)}
-                              title="Plus d'actions"
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-[#7A8FAD] hover:bg-white/10 transition"
-                            >
-                              <MdMoreVert className="text-base" />
-                            </button>
+                            {/*  */}
                           </div>
                         </td>
                       </tr>
