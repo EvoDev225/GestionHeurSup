@@ -68,8 +68,8 @@ const newEnseigner = async (req, res) => {
 const updateEnseigner = async (req, res) => {
     const { id } = req.params;
     const { date, type, duree, salle, observation } = req.body;
-    if ( !date || !type || !duree || !salle || !statut) {
-        return res.status(400).json({ message: "Tous les champs (date, type, duree, salle) sont requis pour la mise à jour" });
+    if (!date || !type || !duree || !salle) {
+        return res.status(400).json({ message: "Les champs obligatoires (date, type, duree, salle) sont requis pour la mise à jour" });
     }
     try {
         const [rows] = await db.query(

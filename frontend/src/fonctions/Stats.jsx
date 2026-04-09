@@ -45,7 +45,7 @@ export const getCoutTotalHeures = async () => {
     } catch (error) {
         throw error.response?.data || error.message;
     }
-};
+};  
 
 export const getHeuresParMois = async () => {
     try {

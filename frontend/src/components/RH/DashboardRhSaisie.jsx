@@ -12,8 +12,7 @@ import { deconnexion, getAllEnseignant, verifierAuthentification } from '../../f
 import { getTotalHeures, getHeuresParMois, getRepartitionHeures, getHeuresParEnseignant } from '../../fonctions/Stats';
 import { getAllMatieres } from '../../fonctions/Matiere';
 import { getAllAnac } from '../../fonctions/Anac';
-import { getAllEnseigner, newEnseigner, updateEnseigner, deleteEnseigner } from '../../fonctions/Enseigner';
-import axios, { all } from 'axios';
+import { getAllEnseigner, getEnseignerById, newEnseigner, updateEnseigner, deleteEnseigner } from '../../fonctions/Enseigner';
 import toast from 'react-hot-toast';
 
 const DashboardRhSaisie = () => {
@@ -33,9 +32,19 @@ const DashboardRhSaisie = () => {
 
   // UI
   const [showModal, setShowModal] = useState(false);
+
+  // Modal modification — complètement séparée de l'insertion
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const actionMenuRef = useRef(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    date: '',
+    type: '',
+    duree: '',
+    salle: '',
+    observation: ''
+  });
+  const [editFormErrors, setEditFormErrors] = useState({});
 
   // État Formulaire
   const [formData, setFormData] = useState({
@@ -66,21 +75,20 @@ const DashboardRhSaisie = () => {
   
   // Reset formulaire
   const resetForm = () => {
-    setFormData({ idens: '',idanac:anac.idanac, idmat: '', date: '', type: '', duree:'', salle: '', observations: '' });
+    setFormData({ idens: '', idanac: anac?.idanac || '', idmat: '', date: '', type: '', duree: '', salle: '', observations: '' });
     setFormErrors({});
-    setEditTarget(null);
     setShowModal(false);
   };
 
   // Handlers CRUD
-  const handleSubmit = async () => {
+  const handleAdd = async () => {
     const errors = {};
     if (!formData.idens) errors.idens = true;
     if (!formData.idmat) errors.idmat = true;
     if (!formData.idanac) errors.idanac = true;
     if (!formData.date) errors.date = true;
     if (!formData.type) errors.type = true;
-    if (!formData.duree) errors.type = true;
+    if (!formData.duree) errors.duree = true;
     if (!formData.salle) errors.salle = true;
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -88,19 +96,66 @@ const DashboardRhSaisie = () => {
       return;
     }
     try {
-      if (editTarget) {
-        await updateEnseigner(editTarget.idens, formData);
-        toast.success("Séance mise à jour avec succès.");
-      } else {
-        
-        await newEnseigner(formData);
-        toast.success("Séance ajoutée avec succès.");
-      }
+      await newEnseigner(formData);
+      toast.success("Séance ajoutée avec succès.");
       const res = await getHeuresParEnseignant();
       setSeances(res.data);
       resetForm();
     } catch (err) {
-      toast.error(err.message || "Erreur lors de l'opération.");
+      toast.error(err.message || "Erreur lors de l'ajout.");
+    }
+  };
+
+  const handleOpenEdit = async (idenseigner) => {
+    setEditLoading(true);
+    setShowEditModal(true);
+    try {
+      const res = await getEnseignerById(idenseigner);
+      const d = res.data;
+      setEditTarget(d);
+      setEditFormData({
+        date: d.date ? d.date.substring(0, 10) : '',
+        type: d.type || '',
+        duree: d.duree || '',
+        salle: d.salle || '',
+        observation: d.observation || ''
+      });
+    } catch (err) {
+      toast.error("Erreur lors du chargement de la séance.");
+      setShowEditModal(false);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    const errors = {};
+    if (!editFormData.date) errors.date = true;
+    if (!editFormData.type) errors.type = true;
+    if (!editFormData.duree) errors.duree = true;
+    if (!editFormData.salle) errors.salle = true;
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors);
+      toast.error("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+    try {
+      await updateEnseigner(editTarget.idenseigner, {
+        date: editFormData.date,
+        type: editFormData.type,
+        duree: editFormData.duree,
+        salle: editFormData.salle,
+        observation: editFormData.observation
+      });
+      toast.success("Séance mise à jour avec succès.");
+      const res = await getAllEnseigner();
+      setEnseigner(res.data);
+      setShowEditModal(false);
+      setEditTarget(null);
+      setEditFormData({ date: '', type: '', duree: '', salle: '', observation: '' });
+      setEditFormErrors({});
+    } catch (err) {
+      toast.error(err.message || "Erreur lors de la modification.");
     }
   };
 
@@ -108,13 +163,13 @@ const DashboardRhSaisie = () => {
     try {
       await deleteEnseigner(id);
       toast.success("Séance supprimée.");
-      const res = await getHeuresParEnseignant();
-      setSeances(res.data);
+      const res = await getAllEnseigner();
+      setEnseigner(res.data);
     } catch (err) {
       toast.error(err.message || "Erreur lors de la suppression.");
     }
   };
-
+  
   useEffect(() => {
     const init = async () => { 
       // Vérification auth
@@ -222,26 +277,19 @@ const DashboardRhSaisie = () => {
               <MdSupervisorAccount size={16} />
               <span>RH</span>
             </div>
-            <button
-              onClick={() => { resetForm(); setShowModal(true); }}
-              className="bg-[#0097FB] text-white text-[13px] font-medium py-2 px-4 rounded-lg flex items-center gap-2 hover:opacity-85 transition-all"
-            >
-              <MdAdd size={18} />
-              Ajouter une séance
-            </button>
           </div>
         </div>
 
         {/* SECTION 1 — KPI CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">
           <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2"> 
-              <MdAccessTime className="text-[#0097FB] text-2xl" />
-              <span className="text-[#7A8FAD] text-[13px]">Heures saisies</span>
+            <div className="flex items-center gap-2 mb-3">
+              <MdAccessTime className="text-[#0097FB] text-xl" />
+              <span className="text-[#7A8FAD] text-[13px]">Total heures saisies</span>
             </div>
-            <div className="text-white text-[28px] font-bold">{formatHeures(totalHeures)}</div>
-            <div className="text-[#7A8FAD] text-[12px]">Total global</div>
-            <div className="mt-3 w-full bg-white/5 h-[3px] rounded-full overflow-hidden">
+            <div className="text-white text-[36px] font-bold leading-tight">{formatHeures(totalHeures)}</div>
+            <div className="text-[#7A8FAD] text-[12px] mt-1">Sur {anac?.libelle || 'l\'année en cours'}</div>
+            <div className="mt-4 w-full bg-white/5 h-[3px] rounded-full overflow-hidden">
               <div className="bg-[#0097FB] h-full rounded-full" style={{ width: '100%' }}></div>
             </div>
           </div>
@@ -266,30 +314,36 @@ const DashboardRhSaisie = () => {
           </div>
 
           <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2"> 
-              <MdPieChart className="text-[#7B2FBE] text-2xl" />
+            <div className="flex items-center gap-2 mb-3">
+              <MdPieChart className="text-[#7B2FBE] text-xl" />
               <span className="text-[#7A8FAD] text-[13px]">Répartition types</span>
             </div>
-            <div className="space-y-2 mt-3">
-              {repartition.map((type, index) => {
-                const percentage = totalRepartitionHeures > 0 ? (parseFloat(type.total_heures) / totalRepartitionHeures) * 100 : 0;
-                let barColor = "#0097FB";
-                if (type.type === "TD") barColor = "#EF4444";
-                if (type.type === "TP") barColor = "#10B981";
-
+            {/* Titre type dominant */}
+            <div className="text-white text-[22px] font-bold mb-3">
+              {repartition.length > 0
+                ? `${repartition.reduce((a, b) => parseFloat(a.total_heures) > parseFloat(b.total_heures) ? a : b).type} DOMINANT`
+                : '—'}
+            </div>
+            {/* Barre multicolore */}
+            <div className="w-full h-2.5 rounded-full overflow-hidden flex mb-3">
+              {repartition.map((type, i) => {
+                const pct = totalRepartitionHeures > 0 ? (parseFloat(type.total_heures) / totalRepartitionHeures) * 100 : 0;
+                let color = "#0097FB";
+                if (type.type === "TD") color = "#EF4444";
+                if (type.type === "TP") color = "#10B981";
+                return <div key={i} style={{ width: `${pct}%`, backgroundColor: color }} />;
+              })}
+            </div>
+            {/* Légende points */}
+            <div className="flex items-center gap-4 flex-wrap">
+              {repartition.map((type, i) => {
+                let color = "#0097FB";
+                if (type.type === "TD") color = "#EF4444";
+                if (type.type === "TP") color = "#10B981";
                 return (
-                  <div key={index}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-white text-[13px] font-medium">{type.type}</span>
-                      <span className="text-[#7A8FAD] text-[11px]">{percentage.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-white/5 h-1.5 rounded-full">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${percentage}%`, backgroundColor: barColor }}
-                      ></div>
-                    </div>
-                    <span className="text-[#7A8FAD] text-[11px] mt-1 block">{formatHeures(type.total_heures)}</span>
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></div>
+                    <span className="text-[#7A8FAD] text-[12px]">{type.type} {formatHeures(type.total_heures)}</span>
                   </div>
                 );
               })}
@@ -299,8 +353,15 @@ const DashboardRhSaisie = () => {
 
         {/* SECTION 2 — TABLEAU */}
         <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-5"> 
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
             <h2 className="text-white text-[17px] font-semibold">Liste des séances</h2>
+            <button
+              onClick={() => { resetForm(); setShowModal(true); }}
+              className="bg-[#0097FB] text-white text-[13px] font-medium py-2 px-4 rounded-lg flex items-center gap-2 hover:opacity-85 transition-all"
+            >
+              <MdAdd size={18} />
+              Ajouter une séance
+            </button>
           </div>
 
           <div className="overflow-x-auto">
@@ -309,19 +370,17 @@ const DashboardRhSaisie = () => {
                 <tr className="bg-white/[0.03] text-[#7A8FAD] text-[12px] uppercase tracking-wider text-left">
                   <th className="px-4 py-3 font-medium border-b border-white/5">Enseignant</th> 
                   <th className="px-4 py-3 font-medium border-b border-white/5">Matière</th>
-                  <th className="px-4 py-3 font-medium border-b border-white/5">CM</th>
-                  <th className="px-4 py-3 font-medium border-b border-white/5">TD</th>
-                  <th className="px-4 py-3 font-medium border-b border-white/5">TP</th>
-                  <th className="px-4 py-3 font-medium border-b border-white/5">Total Éq.</th>
-                  <th className="px-4 py-3 font-medium border-b border-white/5">Vol. Hor.</th>
-                  <th className="px-4 py-3 font-medium border-b border-white/5">H. Comp.</th>
+                  <th className="px-4 py-3 font-medium border-b border-white/5">Date</th>
+                  <th className="px-4 py-3 font-medium border-b border-white/5">Type</th>
+                  <th className="px-4 py-3 font-medium border-b border-white/5">Durée</th>
+                  <th className="px-4 py-3 font-medium border-b border-white/5">Salle</th>
                   <th className="px-4 py-3 font-medium border-b border-white/5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {seances.length > 0 ? (
-                  seances.map((s) => ( 
-                    <tr key={s.id_enseigner} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                {enseigner.length > 0 ? (
+                  enseigner.map((s) => ( 
+                    <tr key={s.idenseigner} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-[#7B2FBE]/15 text-[#7B2FBE] flex items-center justify-center text-[12px] font-bold">
@@ -336,62 +395,29 @@ const DashboardRhSaisie = () => {
                       <td className="px-4 py-4">
                         <div className="text-[#7A8FAD] text-[13px] max-w-[130px] truncate" title={s.intitule}>{s.intitule}</div>
                       </td>
-                      <td className="px-4 py-4 text-white text-[13px]">{formatHeures(s.heures_cm)}</td>
-                      <td className="px-4 py-4 text-white text-[13px]">{formatHeures(s.heures_td)}</td>
-                      <td className="px-4 py-4 text-white text-[13px]">{formatHeures(s.heures_tp)}</td>
-                      <td className="px-4 py-4 text-white text-[13px] font-bold">{formatHeures(s.total_heures_eq)}</td>
-                      <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{formatHeures(s.volumhor)}</td>
                       <td className="px-4 py-4">
-                        {s.heures_complementaires > 0 ? (
-                          <span className="bg-[#10B981]/12 text-[#10B981] text-[11px] px-2 py-0.5 rounded-full font-bold">
-                            +{formatHeures(s.heures_complementaires)}
-                          </span>
-                        ) : s.heures_complementaires < 0 ? (
-                          <span className="bg-[#EF4444]/12 text-[#EF4444] text-[11px] px-2 py-0.5 rounded-full font-bold">
-                            {formatHeures(s.heures_complementaires)}
-                          </span>
-                        ) : (
-                          <span className="text-[#7A8FAD] text-[11px]">—</span>
-                        )}
+                        <div className="text-[#7A8FAD] text-[13px] max-w-[130px] truncate" title={s.date}>{s.date}</div>
                       </td>
-                      <td className="px-4 py-4 text-right">
-                        <button 
-                          onClick={(e) => {
-                            setOpenMenuId(openMenuId === s.id_enseigner ? null : s.id_enseigner);
-                          }}
-                          className="text-[#7A8FAD] hover:text-white p-1 transition-colors relative"
-                        >
-                          <MdMoreVert size={20} />
-                          {openMenuId === s.id_enseigner && (
-                            <div ref={actionMenuRef} className="absolute right-0 mt-2 w-48 bg-[#0D1B2A] border border-white/10 rounded-md shadow-lg z-10">
-                              <button
-                                onClick={() => {
-                                  setEditTarget(s);
-                                  setFormData({
-                                    id_utilisateur: s.id_utilisateur,
-                                    idmat: s.idmat,
-                                    date: s.date,
-                                    type: s.type,
-                                    type_heure: s.type_heure,
-                                    salle: s.salle,
-                                    observations: s.observations
-                                  });
-                                  setShowModal(true);
-                                  setOpenMenuId(null);
-                                }}
-                                className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5"
-                              >
-                                <MdEdit size={18} className="text-[#0097FB]" /> Modifier
-                              </button>
-                              <button
-                                onClick={() => { handleDelete(s.id_enseigner); setOpenMenuId(null); }}
-                                className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-[#EF4444]/10"
-                              >
-                                <MdDelete size={18} /> Supprimer
-                              </button>
-                            </div>
-                          )}
-                        </button>
+                      <td className="px-4 py-4 text-white text-[13px]">{(s.type)}</td>
+                      <td className="px-4 py-4 text-white text-[13px]">{formatHeures(s.duree)}</td>
+                      <td className="px-4 py-4">
+                        <div className="text-[#7A8FAD] text-[13px] max-w-[130px] truncate" title={s.salle}>{s.salle}</div>
+                      </td>
+                      <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenEdit(s.idenseigner)}
+                            className="flex items-center gap-1.5 bg-[#0097FB]/10 hover:bg-[#0097FB]/20 text-[#0097FB] text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all"
+                          >
+                            <MdEdit size={15} /> Modifier
+                          </button>
+                          <button
+                            onClick={() => handleDelete(s.idenseigner)}
+                            className="flex items-center gap-1.5 bg-[#EF4444]/10 hover:bg-[#EF4444]/20 text-[#EF4444] text-[12px] font-medium px-3 py-1.5 rounded-lg transition-all"
+                          >
+                            <MdDelete size={15} /> Supprimer
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -419,13 +445,13 @@ const DashboardRhSaisie = () => {
     <AnimatePresence>
      {
       showModal && (
-         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div 
+         <div className="fixed inset-0 z-[300] flex items-start justify-center pt-16 px-4 pb-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
               className="bg-[#0D1B2A] border border-white/10 rounded-2xl p-7 w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-white text-lg font-semibold">{editTarget ? "Modifier la séance" : "Nouvelle séance"}</h3>
+                <h3 className="text-white text-lg font-semibold">Nouvelle séance</h3>
                 <button onClick={resetForm} className="text-[#7A8FAD] hover:text-white transition-colors"> 
                   <MdClose size={22} />
                 </button>
@@ -433,114 +459,113 @@ const DashboardRhSaisie = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">ENSEIGNANT</label> 
-                  <select
-                    value={formData.idens}
-                    onChange={(e) => setFormData({ ...formData, idens: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.idens ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
-                  >
-                    <option value="" className='text-black'>Sélectionner un enseignant</option>
-                    {
-                      allEnseignant &&  (
-                        allEnseignant.map((e)=>(
-                          <option className='text-black' key={e.idens} value={e.idens}>
-                            {e.prenom} {e.nom}
-                          </option>
-                        ))
-                      )
-                    }
-                  </select>
-                  {formErrors.id_utilisateur && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
-                </div>
-                <div className='hidden'>
-                      <input type="text" value={formData.idanac || ''} />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">MATIÈRE</label> 
-                  <select
-
-                    value={formData.idmat}
-                    onChange={(e)=>setFormData({...formData, idmat: e.target.value})}
-                    className={`bg-white/[0.04] border rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    <option value="" className='text-black'>Sélectionner une matière</option>
-                    {
-                      matieres && matieres.length > 0 ? (
-                        matieres.map((m) => (
-                          <option className='text-black' key={m.idmat} value={m.idmat}>
-                            {m.intitule}
-                          </option>
-                        ))
-                        ) : (
-                            <option value="" disabled>Chargement des matières...</option>
-                      )
-}
-                  </select>
-                  {formErrors.idmat && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DATE DU COURS</label> 
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.date ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all [color-scheme:dark]`}
-                  />
-                  {formErrors.date && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DURÉE (HEURES)</label> 
-                  <input
-                    type="number" min="0.5" step="0.5" placeholder="Ex: 2"
-                    value={formData.duree}
-                    onChange={(e) => setFormData({ ...formData, duree: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.duree ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
-                  />
-                  {formErrors.duree && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
-                </div>
-
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">TYPE D'HEURE</label> 
-                  <div className="flex gap-2">
-                    {["CM", "TD", "TP"].map(type => (
-                      <button
-                        key={type}
-                        onClick={() => setFormData({ ...formData, type: type })}
-                        className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
-                          formData.type === type
-                            ? 'bg-[#0097FB] text-white border-[#0097FB]'
-                            : 'bg-white/[0.04] border-white/10 text-[#7A8FAD] hover:bg-[#0097FB]/10 hover:text-[#0097FB]'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">ENSEIGNANT</label>
+                    <select
+                      value={formData.idens}
+                      onChange={(e) => setFormData({ ...formData, idens: e.target.value })}
+                      className={`bg-white/[0.04] border ${formErrors.idens ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    >
+                      <option value="" className='text-black'>Sélectionner un enseignant</option>
+                      {
+                        allEnseignant && (
+                          allEnseignant.map((e) => (
+                            <option className='text-black' key={e.idens} value={e.idens}>
+                              {e.prenom} {e.nom}
+                            </option>
+                          ))
+                        )
+                      }
+                    </select>
+                    {formErrors.id_utilisateur && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
                   </div>
-                </div>
+                  <div className='hidden'>
+                    <input type="text" value={formData.idanac || ''} />
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">SALLE</label> 
-                  <input
-                    type="text" placeholder="Ex: Amphi A, Salle 12"
-                    value={formData.salle}
-                    onChange={(e) => setFormData({ ...formData, salle: e.target.value })}
-                    className={`bg-white/[0.04] border ${formErrors.salle ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
-                  />
-                  {formErrors.salle && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">MATIÈRE</label>
+                    <select
+                      value={formData.idmat}
+                      onChange={(e) => setFormData({ ...formData, idmat: e.target.value })}
+                      className={`bg-white/[0.04] border rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <option value="" className='text-black'>Sélectionner une matière</option>
+                      {
+                        matieres && matieres.length > 0 ? (
+                          matieres.map((m) => (
+                            <option className='text-black' key={m.idmat} value={m.idmat}>
+                              {m.intitule}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="" disabled>Chargement des matières...</option>
+                        )
+                      }
+                    </select>
+                    {formErrors.idmat && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
 
-                <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">OBSERVATIONS (OPTIONNEL)</label> 
-                  <textarea
-                    rows={3} placeholder="Remarques, notes particulières..."
-                    value={formData.observations}
-                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                    className="bg-white/[0.04] border border-white/10 rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all resize-none"
-                  />
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DATE DU COURS</label>
+                    <input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className={`bg-white/[0.04] border ${formErrors.date ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all [color-scheme:dark]`}
+                    />
+                    {formErrors.date && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DURÉE (HEURES)</label>
+                    <input
+                      type="number" min="0.5" step="0.5" placeholder="Ex: 2"
+                      value={formData.duree}
+                      onChange={(e) => setFormData({ ...formData, duree: e.target.value })}
+                      className={`bg-white/[0.04] border ${formErrors.duree ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    />
+                    {formErrors.duree && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">TYPE D'HEURE</label>
+                    <div className="flex gap-2">
+                      {["CM", "TD", "TP"].map(type => (
+                        <button
+                          key={type}
+                          onClick={() => setFormData({ ...formData, type: type })}
+                          className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
+                            formData.type === type
+                              ? 'bg-[#0097FB] text-white border-[#0097FB]'
+                              : 'bg-white/[0.04] border-white/10 text-[#7A8FAD] hover:bg-[#0097FB]/10 hover:text-[#0097FB]'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">SALLE</label>
+                    <input
+                      type="text" placeholder="Ex: Amphi A, Salle 12"
+                      value={formData.salle}
+                      onChange={(e) => setFormData({ ...formData, salle: e.target.value })}
+                      className={`bg-white/[0.04] border ${formErrors.salle ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    />
+                    {formErrors.salle && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">OBSERVATIONS (OPTIONNEL)</label>
+                    <textarea
+                      rows={3} placeholder="Remarques, notes particulières..."
+                      value={formData.observations}
+                      onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                      className="bg-white/[0.04] border border-white/10 rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all resize-none"
+                    />
+                  </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-8">
@@ -551,16 +576,124 @@ const DashboardRhSaisie = () => {
                   Annuler
                 </button>
                 <button
-                  onClick={handleSubmit} 
+                  onClick={handleAdd} 
                   className="bg-[#0097FB] text-white rounded-lg px-7 py-2.5 text-[14px] font-medium flex items-center gap-2 hover:opacity-85 transition-all"
                 >
-                  <MdSave size={18} /> {editTarget ? "Modifier" : "Enregistrer"}
+                  <MdSave size={18} /> Enregistrer
                 </button>
               </div>
             </motion.div>
           </div>
       )
      }
+      </AnimatePresence>
+
+      {/* MODALE MODIFICATION — indépendante */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div className="fixed inset-0 z-[300] flex items-start justify-center pt-16 px-4 pb-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+              className="bg-[#0D1B2A] border border-white/10 rounded-2xl p-7 w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-white text-lg font-semibold">Modifier la séance</h3>
+                <button
+                  onClick={() => { setShowEditModal(false); setEditTarget(null); setEditFormErrors({}); }}
+                  className="text-[#7A8FAD] hover:text-white transition-colors"
+                >
+                  <MdClose size={22} />
+                </button>
+              </div>
+
+              {editLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-7 h-7 border-2 border-[#0097FB] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DATE DU COURS</label>
+                    <input
+                      type="date"
+                      value={editFormData.date}
+                      onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                      className={`bg-white/[0.04] border ${editFormErrors.date ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all [color-scheme:dark]`}
+                    />
+                    {editFormErrors.date && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">DURÉE (HEURES)</label>
+                    <input
+                      type="number" min="0.5" step="0.5" placeholder="Ex: 2"
+                      value={editFormData.duree}
+                      onChange={(e) => setEditFormData({ ...editFormData, duree: e.target.value })}
+                      className={`bg-white/[0.04] border ${editFormErrors.duree ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    />
+                    {editFormErrors.duree && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">TYPE D'HEURE</label>
+                    <div className="flex gap-2">
+                      {["CM", "TD", "TP"].map(type => (
+                        <button
+                          key={type}
+                          onClick={() => setEditFormData({ ...editFormData, type: type })}
+                          className={`flex-1 py-2.5 rounded-lg text-[13px] font-bold transition-all border ${
+                            editFormData.type === type
+                              ? 'bg-[#0097FB] text-white border-[#0097FB]'
+                              : 'bg-white/[0.04] border-white/10 text-[#7A8FAD] hover:bg-[#0097FB]/10 hover:text-[#0097FB]'
+                          }`}
+                        >{type}</button>
+                      ))}
+                    </div>
+                    {editFormErrors.type && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">SALLE</label>
+                    <input
+                      type="text" placeholder="Ex: Amphi A, Salle 12"
+                      value={editFormData.salle}
+                      onChange={(e) => setEditFormData({ ...editFormData, salle: e.target.value })}
+                      className={`bg-white/[0.04] border ${editFormErrors.salle ? 'border-[#EF4444]' : 'border-white/10'} rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all`}
+                    />
+                    {editFormErrors.salle && <span className="text-[#EF4444] text-[11px]">Ce champ est requis</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[#7A8FAD] text-[12px] uppercase font-bold tracking-tight">OBSERVATIONS (OPTIONNEL)</label>
+                    <textarea
+                      rows={3} placeholder="Remarques, notes particulières..."
+                      value={editFormData.observation}
+                      onChange={(e) => setEditFormData({ ...editFormData, observation: e.target.value })}
+                      className="bg-white/[0.04] border border-white/10 rounded-lg py-2.5 px-3.5 text-white text-[13px] outline-none focus:border-[#0097FB] transition-all resize-none"
+                    />
+                  </div>
+
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 mt-8">
+                <button
+                  onClick={() => { setShowEditModal(false); setEditTarget(null); setEditFormErrors({}); }}
+                  className="bg-transparent border border-white/10 text-[#7A8FAD] hover:text-white hover:border-white/20 rounded-lg px-6 py-2.5 text-[14px] font-medium transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleUpdate}
+                  className="bg-[#0097FB] text-white rounded-lg px-7 py-2.5 text-[14px] font-medium flex items-center gap-2 hover:opacity-85 transition-all"
+                >
+                  <MdSave size={18} /> Modifier
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </>
   );
