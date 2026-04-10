@@ -527,6 +527,7 @@ const getRecapEnseignants = async (req, res) => {
   try {
     const [rows] = await db.query(`
   SELECT 
+    en.idens,
     u.nom,
     u.prenom,
     en.departement,
@@ -545,7 +546,7 @@ const getRecapEnseignants = async (req, res) => {
   JOIN enseignant en ON e.idens = en.idens
   JOIN utilisateur u ON en.idutil = u.idutil
   JOIN matiere m ON e.idmat = m.idmat
-  GROUP BY e.idens, e.idmat, u.nom, u.prenom, en.departement, m.volumhor
+  GROUP BY en.idens, e.idmat, u.nom, u.prenom, en.departement, m.volumhor
   ORDER BY total_heures_eq DESC
 `);
     return res.status(200).json({ message: "Récapitulatif enseignants récupéré", data: rows });
