@@ -16,7 +16,7 @@ import {
   exportEtatGlobalHeuresExcel,
   exportEtatComptabiliteExcel
 } from "../../fonctions/Export.jsx";
-import { getAllUsers, deconnexion, verifierAuthentification } from "../../fonctions/Utilisateur.jsx";
+import { getAllEnseignant, deconnexion, verifierAuthentification } from "../../fonctions/Utilisateur.jsx";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -47,7 +47,7 @@ const DashboardAdminExports = () => {
   const [selectedAnnee, setAnnee] = useState("2025-2026");
   const [selectedMois, setMois] = useState("Mars");
   const [enseignants, setEnseignants] = useState([]);
-  const [selectedEnseignant, setEnseignant] = useState(""); // idutil de l'enseignant sélectionné
+  const [selectedEnseignant, setEnseignant] = useState(""); // idens de l'enseignant sélectionné
   const [loadingId, setLoadingId] = useState(null);
 
   const simulerExport = (id, format, nom) => {
@@ -135,11 +135,11 @@ const DashboardAdminExports = () => {
           toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
         }
       };
-
       const fetchEnseignants = async () => {
         try {
-          const res = await getAllUsers();
+          const res = await getAllEnseignant();
           const liste = (res.data ?? []).filter(u => u.role === "enseignant");
+          
           setEnseignants(liste);
         } catch (error) {
           console.error("Erreur lors de la récupération des enseignants :", error);
@@ -228,7 +228,7 @@ const DashboardAdminExports = () => {
               icon={MdPerson} 
               value={selectedEnseignant} 
               onChange={e => setEnseignant(e.target.value)} 
-              options={enseignants.map(e => ({ id: e.idutil, nom: `${e.prenom} ${e.nom}` }))} 
+              options={enseignants.map(e => ({ id: e.idens, nom: `${e.prenom} ${e.nom}` }))} 
               placeholder="Tous les enseignants" 
             />
           </div>
