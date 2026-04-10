@@ -332,75 +332,7 @@ const DashboardAdminExports = () => {
           </motion.div>
         </div>
 
-        {/* SECTION 3 — HISTORIQUE */}
-        <h3 className="text-[17px] font-semibold mb-4">Historique des exports</h3>
-        <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 rounded-[14px] p-5 shadow-sm overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 px-1">
-            <div className="flex items-center gap-2">
-              <MdHistory className="text-[#0097FB] text-[18px]" />
-              <span className="text-[#7A8FAD] text-[13px]">5 derniers exports</span>
-            </div>
-            <button 
-              onClick={() => console.log("Effacer historique")}
-              className="flex items-center gap-2 text-[#7A8FAD] text-[12px] border border-white/10 rounded-lg px-3 py-1.5 hover:text-[#EF4444] hover:border-[#EF4444]/30 transition-all shrink-0"
-            >
-              <MdDeleteSweep className="text-base" />
-              Effacer l'historique
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] border-collapse">
-              <thead className="bg-white/5 text-[#7A8FAD] text-[12px] uppercase tracking-wider text-left">
-                <tr>
-                  <th className="px-4 py-3 font-semibold border-b border-white/5">Document</th>
-                  <th className="px-4 py-3 font-semibold border-b border-white/5">Format</th>
-                  <th className="px-4 py-3 font-semibold border-b border-white/5">Date & Heure</th>
-                  <th className="px-4 py-3 font-semibold border-b border-white/5">Statut</th>
-                  <th className="px-4 py-3 font-semibold border-b border-white/5 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {historiqueExports.map((item) => (
-                  <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <MdDescription className="text-[#7A8FAD] text-[16px]" />
-                        <span className="text-[13px] font-medium text-white">{item.document}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                        item.format === "PDF" ? "bg-[#EF4444]/12 text-[#EF4444]" : "bg-[#10B981]/12 text-[#10B981]"
-                      }`}>
-                        {item.format}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">
-                      {item.date} <span className="opacity-50 mx-1">à</span> {item.heure}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className={`flex items-center gap-1.5 text-[12px] px-2.5 py-0.5 rounded-full font-medium w-fit ${
-                        item.statut === "Succès" ? "bg-[#10B981]/12 text-[#10B981]" : "bg-[#EF4444]/12 text-[#EF4444]"
-                      }`}>
-                        {item.statut === "Succès" ? <MdCheckCircle size={14} /> : <MdError size={14} />}
-                        {item.statut}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <button 
-                        onClick={() => console.log("Re-télécharger", item.document)}
-                        className="text-[#0097FB] hover:text-white transition-colors p-1"
-                      >
-                        <MdDownload size={19} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+        
       </motion.main>
     </div>
   );

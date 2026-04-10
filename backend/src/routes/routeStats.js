@@ -53,16 +53,18 @@ r.get("/par-niveau", getMatiereParNiveau);
 r.get("/statutAnneesAcademiques", getStatutAnneesAcademiques);
 r.get("/derniersJournaux", getDerniersJournaux);
 
+// --- Stats enseignant (par idens) ---
+r.get("/enseignant/:id/profil", getProfilEnseignant);
+r.get("/enseignant/:id/heures", getHeuresEnseignant);
+r.get("/enseignant/:id/remuneration", getRemunerationEnseignant);
+r.get("/enseignant/:id/heures-par-mois", getHeuresParMoisEnseignant);
+r.get("/enseignant/:id/heures-par-matiere", getHeuresParMatiereEnseignant);
+r.get("/enseignant/:id/statut-seances", getStatutSeancesEnseignant);
+r.get("/enseignant/:id/dernieres-seances", getDernieresSeancesEnseignant);
+
 // ============================================================
 // STATS ENSEIGNANT
 // ============================================================
-r.get("/profilEnseignant/:id", getProfilEnseignant);
-r.get("/heuresEnseignant/:id", getHeuresEnseignant);
-r.get("/remunerationEnseignant/:id", getRemunerationEnseignant);
-r.get("/heuresParMoisEnseignant/:id", getHeuresParMoisEnseignant);
-r.get("/heuresParMatiereEnseignant/:id", getHeuresParMatiereEnseignant);
-r.get("/statutSeancesEnseignant/:id", getStatutSeancesEnseignant);
-r.get("/dernieresSeancesEnseignant/:id", getDernieresSeancesEnseignant);
-r.get("/getRecapEnseignants", getRecapEnseignants);
+
 
 module.exports = r;

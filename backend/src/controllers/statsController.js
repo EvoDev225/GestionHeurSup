@@ -350,6 +350,9 @@ const getDerniersJournaux = async (req, res) => {
     }
 };
 
+// ============================================================
+// STATS DASHBOARD ENSEIGNANT — fonctions filtrées par idens
+// ============================================================
 const getProfilEnseignant = async (req, res) => {
     try {
         const { id } = req.params;
@@ -474,7 +477,7 @@ const getHeuresParMatiereEnseignant = async (req, res) => {
 const getStatutSeancesEnseignant = async (req, res) => {
     try {
         const { id } = req.params;
-        const sql = `SELECT statut, SUM(duree) AS total_heures FROM enseigner WHERE idens = ? GROUP BY statut`;
+        const sql = `SELECT , SUM(duree) AS total_heures FROM enseigner WHERE idens = ? `;
         const [rows] = await db.query(sql, [id]);
         if (rows.length === 0) return res.status(404).json({ message: "Aucune séance trouvée" });
 
@@ -508,7 +511,7 @@ const getDernieresSeancesEnseignant = async (req, res) => {
     try {
         const { id } = req.params;
         const sql = `
-            SELECT e.idenseigner, m.intitule, e.type, e.duree, e.date, e.salle, e.statut
+            SELECT e.idenseigner, m.intitule, e.type, e.duree, e.date, e.salle
             FROM enseigner e
             JOIN matiere m ON e.idmat = m.idmat
             WHERE e.idens = ?
