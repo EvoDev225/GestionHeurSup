@@ -285,7 +285,7 @@ const motdepasseOublie = async (req,res)=>{
             WHERE utilisateur.idutil = ?`,
             [token, expiry, utilisateur.idutil]
         );
-        const lien = `${process.env.LINK}/user/reinitialiserMotdepasse/${token}`;
+        const lien = `${process.env.FRONT_ADD}/motdepasseOublie/${token}`;
         await oublierMotdepasse(email, lien);
         return res.status(200).json({ message: "Email de réinitialisation envoyé" });
     } catch (error) {

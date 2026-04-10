@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaGraduationCap } from 'react-icons/fa';
 import { MdEmail, MdLock, MdVisibility, MdVisibilityOff, MdArrowBack } from 'react-icons/md';
 import logo from "./assets/login.png"
-import { connexion } from './fonctions/utilisateur';
+import { connexion, motdepasseOublie } from './fonctions/utilisateur';
 import {useNavigate} from 'react-router-dom';
 import toast from 'react-hot-toast';
 const Accueil = () => {
@@ -40,13 +40,20 @@ const Accueil = () => {
     }
   }
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!resetEmail) {
-      setError("Veuillez saisir votre email pour la récupération.");
+      setError("Veuillez saisir votre email.");
       return;
     }
     setError("");
-    console.log("Demande de réinitialisation pour :", resetEmail);
+    try {
+      await motdepasseOublie(resetEmail);
+      toast.success("Un lien de réinitialisation a été envoyé à votre adresse email.");
+      setResetEmail("");
+      setIsForgotPassword(false);
+    } catch (err) {
+      setError(err?.message || "Aucun compte associé à cet email.");
+    }
   };
 
   return (

@@ -19,6 +19,7 @@ import DashboardEns from "./components/Enseignant/DashboardEns.jsx";
 import DashboardEnsRecap from "./components/Enseignant/DashboardEnsRecap.jsx";
 
 import { Toaster } from "react-hot-toast";
+import Motdepasse from "./Motdepasse.jsx";
 const RHPlaceholder = ({ title }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -72,6 +73,9 @@ function App() {
           <Route path="/enseignant/dashboard" element={<DashboardEns title="Dashboard Enseignant" />} />
           {/* <Route path="/enseignant/heures" element={<DashboardEnsHeures title="Mes heures" />} /> */}
           <Route path="/enseignant/recap" element={<DashboardEnsRecap title="Mon récapitulatif" />} />
+          {/* Mot de passe oublié */}
+          <Route path="/motdepasseOublie/:token" element={<Motdepasse title="Mon récapitulatif" />} />
+
         </Routes>
       </BrowserRouter>
     </div>
