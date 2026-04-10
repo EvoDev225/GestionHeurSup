@@ -523,6 +523,37 @@ const getDernieresSeancesEnseignant = async (req, res) => {
     }
 };
 
+const getRecapEnseignants = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+  SELECT 
+    u.nom,
+    u.prenom,
+    en.departement,
+    m.volumhor,
+    SUM(CASE WHEN e.type = 'CM' THEN e.duree ELSE 0 END) AS heures_cm,
+    SUM(CASE WHEN e.type = 'TD' THEN e.duree ELSE 0 END) AS heures_td,
+    SUM(CASE WHEN e.type = 'TP' THEN e.duree ELSE 0 END) AS heures_tp,
+    SUM(e.duree) AS total_heures_eq,
+    (SUM(e.duree) - m.volumhor) AS ecart,
+    CASE 
+      WHEN SUM(e.duree) > m.volumhor THEN 'Dépassement'
+      WHEN SUM(e.duree) < m.volumhor THEN 'Sous quota'
+      ELSE 'En règle'
+    END AS statut
+  FROM enseigner e
+  JOIN enseignant en ON e.idens = en.idens
+  JOIN utilisateur u ON en.idutil = u.idutil
+  JOIN matiere m ON e.idmat = m.idmat
+  GROUP BY e.idens, e.idmat, u.nom, u.prenom, en.departement, m.volumhor
+  ORDER BY total_heures_eq DESC
+`);
+    return res.status(200).json({ message: "Récapitulatif enseignants récupéré", data: rows });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     getTotalUtilisateurs,
     getTotalHeures,
@@ -547,5 +578,6 @@ module.exports = {
     getHeuresParMoisEnseignant,
     getHeuresParMatiereEnseignant,
     getStatutSeancesEnseignant,
-    getDernieresSeancesEnseignant
+    getDernieresSeancesEnseignant,
+    getRecapEnseignants
 };

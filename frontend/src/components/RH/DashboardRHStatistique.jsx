@@ -36,7 +36,8 @@ import {
   getHeuresParMois,
   getRepartitionHeures,
   getHeuresParDepartement,
-  getTop5Enseignants
+  getTop5Enseignants,
+  getRecapEnseignants
 } from '../../fonctions/Stats';
 import toast from 'react-hot-toast';
 
@@ -60,18 +61,8 @@ const moisOptions = [
   "Toute l'année", "Janvier", "Février", "Mars", "Avril",
   "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
 ];
-const departements = ["Tous les départements", "Informatique", "Droit", "Marketing", "Comptabilité"];
-const statutsFiltres = ["Tous les statuts", "En règle", "Dépassement", "Sous quota"];
-const recapEnseignants = [
-  { id: 1, code: "ENS-001", nom: "Jean François", dept: "Informatique", cm: 120, td: 90, tp: 68, prevues: 192, statut: "Dépassement" },
-  { id: 2, code: "ENS-002", nom: "Konan Charles", dept: "Informatique", cm: 140, td: 100, tp: 72, prevues: 192, statut: "Dépassement" },
-  { id: 3, code: "ENS-003", nom: "Hervé Koffi", dept: "Droit", cm: 100, td: 80, tp: 48, prevues: 192, statut: "En règle" },
-  { id: 4, code: "ENS-004", nom: "Moro Isaac", dept: "Marketing", cm: 90, td: 75, tp: 50, prevues: 192, statut: "En règle" },
-  { id: 5, code: "ENS-005", nom: "Bamba Sory", dept: "Comptabilité", cm: 110, td: 85, tp: 50, prevues: 192, statut: "Dépassement" },
-  { id: 6, code: "ENS-006", nom: "Aminata Traoré", dept: "Droit", cm: 60, td: 40, tp: 20, prevues: 192, statut: "Sous quota" },
-  { id: 7, code: "ENS-007", nom: "Kacou Grade", dept: "Marketing", cm: 70, td: 55, tp: 30, prevues: 192, statut: "Sous quota" },
-  { id: 8, code: "ENS-008", nom: "Paul Bamba", dept: "Comptabilité", cm: 95, td: 70, tp: 45, prevues: 192, statut: "En règle" },
-];
+const departements = ["Tous les départements", "Informatique", "Droit", "Marketing", "Comptabilité"]; // Keep for filters
+const statutsFiltres = ["Tous les statuts", "En règle", "Dépassement", "Sous quota"]; // Keep for filters
 
 const DashboardRHStatistique = () => {
   const navigate = useNavigate();
@@ -88,7 +79,8 @@ const DashboardRHStatistique = () => {
   const [repartition, setRepartition] = useState([]);
   const [heuresDept, setHeuresDept] = useState([]);
   const [top5, setTop5] = useState([]);
-
+  const [recapEnseignants, setRecapEnseignants] = useState([]);
+  
   // Filtres tableau récapitulatif
   const [searchRecap, setSearchRecap] = useState("");
   const [filterDept, setFilterDept] = useState("Tous les départements");
@@ -103,8 +95,8 @@ const DashboardRHStatistique = () => {
   const getInitials = (name) => name?.split(" ").map(n => n[0]).join("").toUpperCase() || "??";
 
   const filteredRecap = recapEnseignants.filter(e => {
-    const matchSearch = `${e.nom} ${e.code}`.toLowerCase().includes(searchRecap.toLowerCase());
-    const matchDept = filterDept === "Tous les départements" || e.dept === filterDept;
+    const matchSearch = `${e.prenom} ${e.nom}`.toLowerCase().includes(searchRecap.toLowerCase());
+    const matchDept = filterDept === "Tous les départements" || e.departement === filterDept;
     const matchStatut = filterStatut === "Tous les statuts" || e.statut === filterStatut;
     return matchSearch && matchDept && matchStatut;
   });
@@ -218,6 +210,9 @@ const DashboardRHStatistique = () => {
 
       try { const res = await getTop5Enseignants(); setTop5(res.data); }
       catch { toast.error("Erreur top 5."); }
+
+      try { const res = await getRecapEnseignants(); setRecapEnseignants(res.data); }
+      catch { toast.error("Erreur récapitulatif."); }
 
       setLoading(false);
     };
@@ -388,17 +383,13 @@ const DashboardRHStatistique = () => {
 
         {/* SECTION 3 — TABLEAU RÉCAPITULATIF */}
         <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl shadow-sm">
-          {/* TODO: remplacer recapEnseignants par un appel API dédié quand disponible
-              Données nécessaires par enseignant : nom, prenom, ref_utilisateur, departement,
-              heures_cm, heures_td, heures_tp, total_heures_eq, volumhor, statut (calculé)
-              Endpoint suggéré : GET /stats/getRecapEnseignants */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
             <div className="flex items-center gap-2.5">
               <MdTableChart className="text-[#0097FB]" size={18} />
               <h2 className="text-white text-[15px] font-semibold">Récapitulatif par enseignant</h2>
             </div>
             <div className="bg-[#0097FB]/10 text-[#0097FB] text-[12px] px-3 py-1 rounded-full font-medium">
-              {recapEnseignants.length} enseignants
+              {filteredRecap.length} enseignants
             </div>
           </div>
 
@@ -444,36 +435,33 @@ const DashboardRHStatistique = () => {
               </thead>
               <tbody>
                 {filteredRecap.length > 0 ? (
-                  filteredRecap.map((e) => {
-                    const total = e.cm + e.td + e.tp;
-                    const ecart = total - e.prevues;
+                  filteredRecap.map((e, index) => {
                     return (
-                      <tr key={e.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                      <tr key={index} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-[#7B2FBE]/15 text-[#7B2FBE] flex items-center justify-center text-[12px] font-bold">
-                              {getInitials(e.nom)}
+                              {getInitials(`${e.prenom} ${e.nom}`)}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-white text-[13px] font-medium">{e.nom}</span>
-                              <span className="text-[#7A8FAD] text-[11px]">{e.code}</span>
+                              <span className="text-white text-[13px] font-medium">{e.prenom} {e.nom}</span>
+                              <span className="text-[#7A8FAD] text-[11px]">{e.departement}</span>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{e.dept}</td>
-                        <td className="px-4 py-4 text-white text-[13px]">{e.cm}<span className="text-[#7A8FAD] text-[12px]">H</span></td>
-                        <td className="px-4 py-4 text-white text-[13px]">{e.td}<span className="text-[#7A8FAD] text-[12px]">H</span></td>
-                        <td className="px-4 py-4 text-white text-[13px]">{e.tp}<span className="text-[#7A8FAD] text-[12px]">H</span></td>
+                        <td className="px-4 py-4 text-white text-[13px]">{formatHeures(e.heures_cm)}</td>
+                        <td className="px-4 py-4 text-white text-[13px]">{formatHeures(e.heures_td)}</td>
+                        <td className="px-4 py-4 text-white text-[13px]">{formatHeures(e.heures_tp)}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className="text-white text-[14px] font-bold">{total}</span>
-                          <span className="text-[#7A8FAD] text-[12px]">H</span>
+                          <span className="text-white text-[14px] font-bold">{formatHeures(e.total_heures_eq)}</span>
                         </td>
-                        <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{e.prevues}H</td>
+                        <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{formatHeures(e.volumhor)}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          {ecart > 0 ? (
-                            <span className="text-[#EF4444] font-semibold">+{ecart}H</span>
-                          ) : ecart < 0 ? (
-                            <span className="text-[#10B981] font-semibold">{ecart}H</span>
+                          {parseFloat(e.ecart) > 0 ? (
+                            <span className="text-[#EF4444] font-semibold">+{formatHeures(e.ecart)}</span>
+                          ) : parseFloat(e.ecart) < 0 ? (
+                            <span className="text-[#10B981] font-semibold">{formatHeures(e.ecart)}</span>
                           ) : (
                             <span className="text-[#7A8FAD]">= 0H</span>
                           )}

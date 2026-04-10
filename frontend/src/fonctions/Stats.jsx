@@ -226,3 +226,14 @@ export const getTop5Enseignants = async () => {
         throw error.response?.data || error.message;
     }
 };
+
+
+
+export const getRecapEnseignants = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/stats/getRecapEnseignants`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
