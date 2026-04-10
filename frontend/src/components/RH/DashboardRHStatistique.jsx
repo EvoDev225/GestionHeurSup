@@ -61,7 +61,6 @@ const moisOptions = [
   "Toute l'année", "Janvier", "Février", "Mars", "Avril",
   "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
 ];
-const departements = ["Tous les départements", "Informatique", "Droit", "Marketing", "Comptabilité"]; // Keep for filters
 const statutsFiltres = ["Tous les statuts", "En règle", "Dépassement", "Sous quota"]; // Keep for filters
 
 const DashboardRHStatistique = () => {
@@ -100,6 +99,11 @@ const DashboardRHStatistique = () => {
     const matchStatut = filterStatut === "Tous les statuts" || e.statut === filterStatut;
     return matchSearch && matchDept && matchStatut;
   });
+
+  const departements = [
+    "Tous les départements",
+    ...Array.from(new Set(recapEnseignants.map(e => e.departement).filter(Boolean)))
+  ];
 
   // --- CONFIG CHARTS ---
   
@@ -175,6 +179,34 @@ const DashboardRHStatistique = () => {
     },
   };
 
+  const fetchStats = async () => {
+    try { const res = await getTotalHeures(); setTotalHeures(res.data.total_heures); }
+    catch { toast.error("Erreur heures totales."); }
+
+    try { const res = await getMoyenneHeuresParEnseignant(); setMoyenne(res.data); }
+    catch { toast.error("Erreur moyenne."); }
+
+    try { const res = await getTauxDepassement(); setTauxDepassement(res.data); }
+    catch { toast.error("Erreur taux dépassement."); }
+
+    try { const res = await getHeuresParMois(); setHeuresParMois(res.data); }
+    catch { toast.error("Erreur heures par mois."); }
+
+    try { const res = await getRepartitionHeures(); setRepartition(res.data); }
+    catch { toast.error("Erreur répartition."); }
+
+    try { const res = await getHeuresParDepartement(); setHeuresDept(res.data); }
+    catch { toast.error("Erreur départements."); }
+
+    try { const res = await getTop5Enseignants(); setTop5(res.data); }
+    catch { toast.error("Erreur top 5."); }
+
+    try { const res = await getRecapEnseignants(); setRecapEnseignants(res.data); }
+    catch { toast.error("Erreur récapitulatif."); }
+
+    setLoading(false);
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -189,35 +221,16 @@ const DashboardRHStatistique = () => {
         navigate("/");
         return;
       }
-
-      try { const res = await getTotalHeures(); setTotalHeures(res.data.total_heures); }
-      catch { toast.error("Erreur heures totales."); }
-
-      try { const res = await getMoyenneHeuresParEnseignant(); setMoyenne(res.data); }
-      catch { toast.error("Erreur moyenne."); }
-
-      try { const res = await getTauxDepassement(); setTauxDepassement(res.data); }
-      catch { toast.error("Erreur taux dépassement."); }
-
-      try { const res = await getHeuresParMois(); setHeuresParMois(res.data); }
-      catch { toast.error("Erreur heures par mois."); }
-
-      try { const res = await getRepartitionHeures(); setRepartition(res.data); }
-      catch { toast.error("Erreur répartition."); }
-
-      try { const res = await getHeuresParDepartement(); setHeuresDept(res.data); }
-      catch { toast.error("Erreur départements."); }
-
-      try { const res = await getTop5Enseignants(); setTop5(res.data); }
-      catch { toast.error("Erreur top 5."); }
-
-      try { const res = await getRecapEnseignants(); setRecapEnseignants(res.data); }
-      catch { toast.error("Erreur récapitulatif."); }
-
-      setLoading(false);
+      await fetchStats();
     };
     init();
   }, [navigate]);
+
+  useEffect(() => {
+    if (!loading) {
+      fetchStats();
+    }
+  }, [selectedAnnee, selectedMois]);
 
   return (
     <div className="bg-[#000814] min-h-screen">
@@ -264,8 +277,16 @@ const DashboardRHStatistique = () => {
               {moisOptions.map(m => <option key={m} value={m} className="bg-[#0D1B2A]">{m}</option>)}
             </select>
 
-            <div className="sm:ml-auto bg-[#0097FB]/10 border border-[#0097FB]/20 rounded-lg px-4 py-1.5 text-[#0097FB] text-[13px] font-medium">
-              Affichage : {selectedAnnee} · {selectedMois}
+            <div className="sm:ml-auto flex items-center gap-3">
+              <button
+                onClick={() => fetchStats()}
+                className="bg-[#0097FB] text-white rounded-lg px-4 py-1.5 text-[13px] font-medium hover:opacity-85 transition-all"
+              >
+                Appliquer
+              </button>
+              <div className="bg-[#0097FB]/10 border border-[#0097FB]/20 rounded-lg px-4 py-1.5 text-[#0097FB] text-[13px] font-medium">
+                Affichage : {selectedAnnee} · {selectedMois}
+              </div>
             </div>
           </div>
         </div>
@@ -449,7 +470,7 @@ const DashboardRHStatistique = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{e.dept}</td>
+                        <td className="px-4 py-4 text-[#7A8FAD] text-[13px]">{e.departement}</td>
                         <td className="px-4 py-4 text-white text-[13px]">{formatHeures(e.heures_cm)}</td>
                         <td className="px-4 py-4 text-white text-[13px]">{formatHeures(e.heures_td)}</td>
                         <td className="px-4 py-4 text-white text-[13px]">{formatHeures(e.heures_tp)}</td>
