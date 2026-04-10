@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 
 const navItems = [
   { label: "Tableau de bord", path: "/enseignant/dashboard", icon: MdDashboard },
-  { label: "Mes heures", path: "/enseignant/heures", icon: MdEventNote },
   { label: "Mon récapitulatif", path: "/enseignant/recap", icon: MdReceiptLong },
 ];
 

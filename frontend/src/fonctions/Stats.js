@@ -66,3 +66,12 @@ export const getDernieresSeancesEnseignant = async (idens) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const getRecapEnseignantById = async (idens) => {
+    try {
+        const response = await axios.get(`${API_URL}/stats/enseignant/${idens}/recap`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

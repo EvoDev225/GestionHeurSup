@@ -15,7 +15,7 @@ import DashboardRHStatistique from "./components/RH/DashboardRHStatistique.jsx";
 import DashboardRhExport from "./components/RH/DashboardRhExport.jsx";
 import SidebarEnseignant from "./components/Enseignant/SidebarEnseignant.jsx";
 import DashboardEns from "./components/Enseignant/DashboardEns.jsx";
-import DashboardEnsHeures from "./components/Enseignant/DashboardEnsHeures.jsx";
+// import DashboardEnsHeures from "./components/Enseignant/DashboardEnsHeures.jsx";
 import DashboardEnsRecap from "./components/Enseignant/DashboardEnsRecap.jsx";
 
 import { Toaster } from "react-hot-toast";
@@ -70,7 +70,7 @@ function App() {
 
           {/* Routes Enseignant */}
           <Route path="/enseignant/dashboard" element={<DashboardEns title="Dashboard Enseignant" />} />
-          <Route path="/enseignant/heures" element={<DashboardEnsHeures title="Mes heures" />} />
+          {/* <Route path="/enseignant/heures" element={<DashboardEnsHeures title="Mes heures" />} /> */}
           <Route path="/enseignant/recap" element={<DashboardEnsRecap title="Mon récapitulatif" />} />
         </Routes>
       </BrowserRouter>

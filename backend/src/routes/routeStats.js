@@ -24,7 +24,8 @@ const {
     getHeuresParMatiereEnseignant,
     getStatutSeancesEnseignant,
     getDernieresSeancesEnseignant,
-    getRecapEnseignants
+    getRecapEnseignants,
+    getRecapEnseignantById
 } = require('../controllers/statsController');
 const r = express.Router();
 
@@ -61,6 +62,8 @@ r.get("/enseignant/:id/heures-par-mois", getHeuresParMoisEnseignant);
 r.get("/enseignant/:id/heures-par-matiere", getHeuresParMatiereEnseignant);
 r.get("/enseignant/:id/statut-seances", getStatutSeancesEnseignant);
 r.get("/enseignant/:id/dernieres-seances", getDernieresSeancesEnseignant);
+r.get("/enseignant/:id/recap", getRecapEnseignantById);
+r.get("/getRecapEnseignants", getRecapEnseignants);
 
 // ============================================================
 // STATS ENSEIGNANT
