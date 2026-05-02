@@ -25,7 +25,7 @@ import {
   getEnseignantsEnDepassement,
   getRepartitionHeures,
   getHeuresParDepartement
-} from '../../fonctions/Stats';
+} from '../../fonctions/Stats.jsx';
 
 // Enregistrement Chart.js
 ChartJS.register(

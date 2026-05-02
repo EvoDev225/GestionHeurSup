@@ -2,8 +2,7 @@ const { db } = require('../config/db');
 
 const getTotalUtilisateurs = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT COUNT(*) AS total FROM utilisateur');
-        if (rows.length === 0) return res.status(404).json({ message: "Aucun utilisateur trouvé" });
+        const [rows] = await db.query("SELECT COUNT(*) AS total FROM utilisateur WHERE role = 'enseignant'");
         return res.status(200).json({ message: "Total des utilisateurs récupéré", data: rows[0] });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -45,14 +44,7 @@ const getCoutTotalHeures = async (req, res) => {
             GROUP BY ens.idens, u.nom, u.prenom, ens.tauxh, a.equ_cm_td, a.equ_cm_tp
         `;
         const [rows] = await db.query(sql);
-        if (rows.length === 0) return res.status(404).json({ message: "Aucune donnée de coût disponible" });
-        
-        const cout_global = rows.reduce((acc, curr) => acc + parseFloat(curr.cout_total), 0);
-        
-        return res.status(200).json({ 
-            message: "Coût total des heures récupéré", 
-            data: { details: rows, cout_global } 
-        });
+        return res.status(200).json({ message: "Coût total des heures récupéré", data: { details: rows, cout_global: rows.reduce((acc, curr) => acc + parseFloat(curr.cout_total), 0) } });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -101,7 +93,6 @@ const getHeuresParMois = async (req, res) => {
             ORDER BY mois ASC
         `;
         const [rows] = await db.query(sql);
-        if (rows.length === 0) return res.status(404).json({ message: "Aucune donnée mensuelle trouvée" });
         return res.status(200).json({ message: "Heures par mois récupérées", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -118,7 +109,6 @@ const getHeuresParDepartement = async (req, res) => {
             ORDER BY total_heures DESC
         `;
         const [rows] = await db.query(sql);
-        if (rows.length === 0) return res.status(404).json({ message: "Aucune donnée par département trouvée" });
         return res.status(200).json({ message: "Heures par département récupérées", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -133,7 +123,6 @@ const getRepartitionHeures = async (req, res) => {
             GROUP BY type
         `;
         const [rows] = await db.query(sql);
-        if (rows.length === 0) return res.status(404).json({ message: "Aucune répartition trouvée" });
         return res.status(200).json({ message: "Répartition des heures récupérée", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -165,7 +154,6 @@ const getEnseignantsEnDepassement = async (req, res) => {
             HAVING total_heures_eq > m.volumhor
         `;
         const [rows] = await db.query(sql);
-        if (rows.length === 0) return res.status(404).json({ message: "Aucun enseignant en dépassement trouvé" });
         return res.status(200).json({ message: "Enseignants en dépassement récupérés", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -343,7 +331,6 @@ const getStatutAnneesAcademiques = async (req, res) => {
 const getDerniersJournaux = async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM journal ORDER BY created_at DESC LIMIT 20');
-        if (rows.length === 0) return res.status(404).json({ message: "Aucun journal trouvé" });
         return res.status(200).json({ message: "Derniers journaux récupérés", data: rows });
     } catch (error) {
         return res.status(500).json({ message: error.message });

@@ -38,7 +38,7 @@ import {
   getHeuresParDepartement,
   getTop5Enseignants,
   getRecapEnseignants
-} from '../../fonctions/Stats';
+} from '../../fonctions/Stats.jsx';
 import toast from 'react-hot-toast';
 
 // Enregistrement Chart.js

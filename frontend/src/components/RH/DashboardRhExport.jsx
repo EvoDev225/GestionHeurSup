@@ -26,9 +26,9 @@ import {
 import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
 import { getAllEnseignant, deconnexion, verifierAuthentification } from '../../fonctions/Utilisateur';
-import { getCoutTotalHeures, getEnseignantsEnDepassement } from '../../fonctions/Stats';
+import { getCoutTotalHeures, getEnseignantsEnDepassement } from '../../fonctions/Stats.jsx';
 import { useNavigate } from 'react-router-dom';
-import { getRecapEnseignants } from '../../fonctions/Stats';
+import { getRecapEnseignants } from '../../fonctions/Stats.jsx';
 import { exportFicheEnseignantPDF } from '../../fonctions/Export';
 import toast from 'react-hot-toast';
 

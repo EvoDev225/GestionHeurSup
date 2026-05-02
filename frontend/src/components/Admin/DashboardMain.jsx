@@ -21,13 +21,14 @@ import { useNavigate } from 'react-router-dom';
 import { 
   getTotalUtilisateurs, 
   getTotalHeures, 
-  getCoutTotalHeures, 
+  getCoutTotalHeures,
   getEnseignantsEnDepassement, 
   getHeuresParMois, 
   getHeuresParDepartement, 
   getRepartitionHeures,
   getDerniersJournaux 
-} from '../../fonctions/Stats';
+} from '../../fonctions/Stats.jsx';
+
 
 // Enregistrement des composants Chart.js
 ChartJS.register(
@@ -149,7 +150,7 @@ const DashboardMain = () => {
 
       const fetchStats = async () => {
         try {
-          const [u, h, c, dep, mois, dept, rep, logs] = await Promise.all([
+          const [u, h, c, dep, mois, dept, rep, logs] = await Promise.allSettled([
             getTotalUtilisateurs(),
             getTotalHeures(),
             getCoutTotalHeures(),
@@ -159,21 +160,21 @@ const DashboardMain = () => {
             getRepartitionHeures(),
             getDerniersJournaux(),
           ]);
-          setTotalUsers(u.data);
-          setTotalHeures(h.data);
-          setCoutTotal(c.data);
-          setDepassements(dep.data ?? []);
-          setHeuresParMois(mois.data ?? []);
-          setHeuresParDept(dept.data ?? []);
-          setRepartition(rep.data);
-          setJournaux(logs.data ?? []);
-          
+
+          if (u.status === 'fulfilled') setTotalUsers(u.value.data);
+          if (h.status === 'fulfilled') setTotalHeures(h.value.data);
+          if (c.status === 'fulfilled') setCoutTotal(c.value.data);
+          if (dep.status === 'fulfilled') setDepassements(dep.value.data ?? []);
+          if (mois.status === 'fulfilled') setHeuresParMois(mois.value.data ?? []);
+          if (dept.status === 'fulfilled') setHeuresParDept(dept.value.data ?? []);
+          if (rep.status === 'fulfilled') setRepartition(rep.value.data ?? []);
+          if (logs.status === 'fulfilled') setJournaux(logs.value.data ?? []);
 
         } catch (error) {
-          console.error("Erreur lors de la récupération des statistiques :", error);
+          console.error("Erreur fetchStats :", error);
         }
-      
-    }
+      };
+
     fetchUserData();
       fetchStats()
   },[]);

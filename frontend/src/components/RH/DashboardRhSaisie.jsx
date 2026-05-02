@@ -9,7 +9,7 @@ import SidebarRH from './SidebarRH';
 import Navbar from '../Navbar';
 import { useNavigate } from 'react-router-dom';
 import { deconnexion, getAllEnseignant, verifierAuthentification } from '../../fonctions/Utilisateur';
-import { getTotalHeures, getHeuresParMois, getRepartitionHeures, getHeuresParEnseignant } from '../../fonctions/Stats';
+import { getTotalHeures, getHeuresParMois, getRepartitionHeures, getHeuresParEnseignant } from '../../fonctions/Stats.jsx';
 import { getAllMatieres } from '../../fonctions/Matiere';
 import { getAllAnac } from '../../fonctions/Anac';
 import { getAllEnseigner, getEnseignerById, newEnseigner, updateEnseigner, deleteEnseigner } from '../../fonctions/Enseigner';
