@@ -2,7 +2,7 @@ const { db } = require('../config/db')
 
 const getAllJournal = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM journal ORDER BY created_at DESC')
+        const [rows] = await db.query('SELECT * FROM journal ORDER BY created_at DESC LIMIT 5')
         if (rows.length === 0) {
             return res.status(404).json({ message: "Aucun enregistrement de journal trouvé" })
         }

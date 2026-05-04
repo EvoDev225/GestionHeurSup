@@ -176,6 +176,9 @@ const DashboardEns = () => {
   const volumhor = parseFloat(heures?.volumhor || 0);
   const depassement = Math.max(0, totalEffectue - volumhor);
   const progression = volumhor > 0 ? Math.min((totalEffectue / volumhor) * 100, 100) : 0;
+  const maxHeuresMatiere = heuresParMatiere.length > 0
+    ? Math.max(...heuresParMatiere.map(m => parseFloat(m.total_heures) || 0))
+    : 1;
   const montant = parseFloat(remuneration?.remuneration_estimee || 0);
   const tauxh = parseFloat(user?.tauxh || 0);
 
@@ -314,7 +317,7 @@ const DashboardEns = () => {
                         <div className="w-full bg-[#1E2D3D] rounded-full h-2.5">
                           <div
                             className="bg-[#0097FB] h-2.5 rounded-full"
-                            style={{ width: `${(parseFloat(mat.total_heures) / totalEffectue) * 100 || 0}%` }}
+                            style={{ width: `${Math.min((parseFloat(mat.total_heures) / maxHeuresMatiere) * 100, 100) || 0}%` }}
                           ></div>
                         </div>
                         <div className="flex justify-between text-xs text-[#7A8FAD] mt-1">

@@ -151,20 +151,34 @@ const DashboardRHStatistique = () => {
     labels: top5.map(e => `${e.prenom} ${e.nom}`),
     datasets: [
       {
-        label: "Heures effectuées",
-        data: top5.map(e => parseFloat(e.total_heures)),
-        backgroundColor: top5.map(e =>
-          parseFloat(e.total_heures) > parseFloat(e.volumhor)
-            ? "rgba(239, 68, 68, 0.7)"
-            : "rgba(0, 151, 251, 0.7)"
-        ),
+        label: "CM",
+        data: top5.map(e => parseFloat(e.heures_cm || 0)),
+        backgroundColor: "rgba(0, 151, 251, 0.8)",
         borderRadius: 4,
+        stack: "heures",
       },
       {
-        label: "Volume prévu",
-        data: top5.map(e => parseFloat(e.volumhor)),
-        backgroundColor: "rgba(255, 255, 255, 0.06)",
+        label: "TD",
+        data: top5.map(e => parseFloat(e.heures_td || 0)),
+        backgroundColor: "rgba(16, 185, 129, 0.8)",
         borderRadius: 4,
+        stack: "heures",
+      },
+      {
+        label: "TP",
+        data: top5.map(e => parseFloat(e.heures_tp || 0)),
+        backgroundColor: "rgba(245, 158, 11, 0.8)",
+        borderRadius: 4,
+        stack: "heures",
+      },
+      {
+        label: "Total éq.",
+        data: top5.map(e => parseFloat(e.total_heures_eq || 0)),
+        backgroundColor: "rgba(255, 255, 255, 0.06)",
+        borderColor: "rgba(255, 255, 255, 0.15)",
+        borderWidth: 1,
+        borderRadius: 4,
+        stack: "total",
       }
     ],
   };
@@ -396,7 +410,44 @@ const DashboardRHStatistique = () => {
             <div className="h-[220px]">
               <Bar 
                 data={top5Data} 
-                options={{ ...chartOptions, plugins: { legend: { display: true, labels: { color: '#7A8FAD', font: { size: 12 } } } } }} 
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      labels: { color: '#7A8FAD', font: { size: 12 }, usePointStyle: true }
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const val = parseFloat(context.parsed.y || 0);
+                          const h = Math.floor(val);
+                          const min = Math.round((val - h) * 60);
+                          return `${context.dataset.label} : ${h}H${min.toString().padStart(2, '0')}`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      stacked: true,
+                      grid: { color: "rgba(255, 255, 255, 0.04)" },
+                      ticks: { color: "#7A8FAD", font: { size: 11 } }
+                    },
+                    y: {
+                      stacked: false,
+                      beginAtZero: true,
+                      grid: { color: "rgba(255, 255, 255, 0.04)" },
+                      ticks: {
+                        color: "#7A8FAD",
+                        font: { size: 11 },
+                        callback: function(value) {
+                          return value + 'H';
+                        }
+                      }
+                    }
+                  }
+                }} 
               />
             </div>
           </div>

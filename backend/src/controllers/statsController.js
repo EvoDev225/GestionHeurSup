@@ -580,6 +580,39 @@ const getRecapEnseignants = async (req, res) => {
   }
 };
 
+const getTop5Enseignants = async (req, res) => {
+    try {
+        const sql = `
+            SELECT
+                u.nom,
+                u.prenom,
+                ens.departement,
+                ens.grade,
+                SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) AS heures_cm,
+                SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) AS heures_td,
+                SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) AS heures_tp,
+                (SUM(CASE WHEN e.type='CM' THEN e.duree ELSE 0 END) * 1 +
+                 SUM(CASE WHEN e.type='TD' THEN e.duree ELSE 0 END) / a.equ_cm_td +
+                 SUM(CASE WHEN e.type='TP' THEN e.duree ELSE 0 END) / a.equ_cm_tp) AS total_heures_eq
+            FROM enseigner e
+            JOIN enseignant ens ON e.idens = ens.idens
+            JOIN utilisateur u ON ens.idutil = u.idutil
+            JOIN annee_academique a ON e.idanac = a.idanac
+            WHERE a.statut = 'en_cours'
+            GROUP BY ens.idens, u.nom, u.prenom, ens.departement, ens.grade, a.equ_cm_td, a.equ_cm_tp
+            ORDER BY total_heures_eq DESC
+            LIMIT 5
+        `;
+        const [rows] = await db.query(sql);
+        if (rows.length === 0) {
+            return res.status(404).json({ message: "Aucun enseignant trouvé" });
+        }
+        return res.status(200).json({ message: "Top 5 enseignants récupéré", data: rows });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getTotalUtilisateurs,
     getTotalHeures,
@@ -606,5 +639,6 @@ module.exports = {
     getStatutSeancesEnseignant,
     getDernieresSeancesEnseignant,
     getRecapEnseignants,
-    getRecapEnseignantById
+    getRecapEnseignantById,
+    getTop5Enseignants
 };

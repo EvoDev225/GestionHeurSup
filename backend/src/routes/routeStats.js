@@ -25,7 +25,8 @@ const {
     getStatutSeancesEnseignant,
     getDernieresSeancesEnseignant,
     getRecapEnseignants,
-    getRecapEnseignantById
+    getRecapEnseignantById,
+    getTop5Enseignants
 } = require('../controllers/statsController');
 const r = express.Router();
 
@@ -43,6 +44,7 @@ r.get("/enseignantsEnDepassement", getEnseignantsEnDepassement);
 r.get("/moyenneHeuresParEnseignant", getMoyenneHeuresParEnseignant);
 r.get("/tauxDepassement", getTauxDepassement);
 r.get("/statutHeures", getStatutHeures);
+r.get("/top5Enseignants", getTop5Enseignants);
 
 // ============================================================
 // STATS ADMIN UNIQUEMENT

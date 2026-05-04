@@ -220,7 +220,7 @@ export const getDernieresSeancesEnseignant = async (id) => {
 
 export const getTop5Enseignants = async () => {
     try {
-        const response = await axios.get(`${API_URL}/stats/getTop5Enseignants`);
+        const response = await axios.get(`${API_URL}/stats/top5Enseignants`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

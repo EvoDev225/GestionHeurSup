@@ -32,6 +32,8 @@ const DashboardRhSaisie = () => {
 
   // UI
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Modal modification — complètement séparée de l'insertion
   const [showEditModal, setShowEditModal] = useState(false);
@@ -67,6 +69,17 @@ const DashboardRhSaisie = () => {
     return `${h}H${min.toString().padStart(2, '0')}`;
   };
 
+  const totalPages = Math.ceil(enseigner.length / itemsPerPage);
+  const paginatedEnseigner = enseigner.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // Réinitialiser la page quand les données changent
   // Calcul répartition
   const totalRepartitionHeures = repartition.reduce((acc, curr) => acc + parseFloat(curr.total_heures || 0), 0);
   
@@ -100,6 +113,7 @@ const DashboardRhSaisie = () => {
       toast.success("Séance ajoutée avec succès.");
       const res = await getHeuresParEnseignant();
       setSeances(res.data);
+      setCurrentPage(1);
       resetForm();
     } catch (err) {
       toast.error(err.message || "Erreur lors de l'ajout.");
@@ -150,6 +164,7 @@ const DashboardRhSaisie = () => {
       toast.success("Séance mise à jour avec succès.");
       const res = await getAllEnseigner();
       setEnseigner(res.data);
+      setCurrentPage(1);
       setShowEditModal(false);
       setEditTarget(null);
       setEditFormData({ date: '', type: '', duree: '', salle: '', observation: '' });
@@ -165,6 +180,7 @@ const DashboardRhSaisie = () => {
       toast.success("Séance supprimée.");
       const res = await getAllEnseigner();
       setEnseigner(res.data);
+      setCurrentPage(1);
     } catch (err) {
       toast.error(err.message || "Erreur lors de la suppression.");
     }
@@ -379,7 +395,7 @@ const DashboardRhSaisie = () => {
               </thead>
               <tbody>
                 {enseigner.length > 0 ? (
-                  enseigner.map((s) => ( 
+                  paginatedEnseigner.map((s) => ( 
                     <tr key={s.idenseigner} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
@@ -435,6 +451,78 @@ const DashboardRhSaisie = () => {
               </tbody>
             </table>
           </div>
+          {enseigner.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/5">
+              
+              {/* Infos */}
+              <span className="text-[#7A8FAD] text-[12px]">
+                {(currentPage - 1) * itemsPerPage + 1}–
+                {Math.min(currentPage * itemsPerPage, enseigner.length)} sur{' '}
+                {enseigner.length} séances
+              </span>
+
+              {/* Contrôles */}
+              <div className="flex items-center gap-1">
+
+                {/* Précédent */}
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-[#7A8FAD] text-[13px] hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  ‹
+                </button>
+
+                {/* Pages numérotées */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p =>
+                    p === 1 ||
+                    p === totalPages ||
+                    (p >= currentPage - 1 && p <= currentPage + 1)
+                  )
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) {
+                      acc.push('...');
+                    }
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === '...' ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="w-8 h-8 flex items-center justify-center text-[#7A8FAD] text-[12px]"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => goToPage(item)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-[12px] font-medium transition-all border ${
+                          currentPage === item
+                            ? 'bg-[#0097FB] text-white border-[#0097FB]'
+                            : 'border-white/10 text-[#7A8FAD] hover:bg-white/5'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )
+                }
+
+                {/* Suivant */}
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-[#7A8FAD] text-[13px] hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  ›
+                </button>
+
+              </div>
+            </div>
+          )}
         </div> 
           </>
         )}

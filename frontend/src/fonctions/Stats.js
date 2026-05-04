@@ -75,3 +75,12 @@ export const getRecapEnseignantById = async (idens) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const getTop5Enseignants = async () => {
+    try {
+    const response = await axios.get(`${API_URL}/stats/top5Enseignants`);
+    return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;    
+    }
+};
