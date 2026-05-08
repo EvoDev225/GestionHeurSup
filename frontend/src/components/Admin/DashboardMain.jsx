@@ -302,17 +302,17 @@ const DashboardMain = () => {
                 <div className="flex items-center gap-4">
                   <span className="text-[#7A8FAD] font-medium text-sm">{idx + 1}</span>
                   <div>
-                    <p className="text-white text-[14px] font-medium">{ens.nom}</p>
-                    <p className="text-[#7A8FAD] text-[12px]">{ens.departement ?? ens.dept}</p>
+                    <p className="text-white text-[14px] font-medium">{ens.nom} {ens.prenom}</p>
+                    <p className="text-[#7A8FAD] text-[12px]">{ens.intitule}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-white font-bold text-sm font-['JetBrains_Mono']">{ens.total_heures ?? ens.heures}H</span>
+                  <span className="text-white font-bold text-sm font-['JetBrains_Mono']">{parseFloat(ens.total_heures_eq).toFixed(1)}H</span>
                   <span 
                     className="px-2 py-1 rounded-md text-[11px] font-bold shadow-sm font-['JetBrains_Mono']"
                     style={{ backgroundColor: `${ens.color ?? '#EF4444'}15`, color: ens.color ?? '#EF4444', border: `1px solid ${ens.color ?? '#EF4444'}30` }}
                   >
-                    +{ens.heures_depassement ?? ens.depassement ?? 0}
+                    +{parseFloat(ens.heures_complementaires).toFixed(1)}H
                   </span>
                 </div>
               </motion.div>
