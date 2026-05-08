@@ -10,8 +10,9 @@ import {
   MdPersonAdd, 
   MdMoreVert, 
   MdEdit, 
-  MdDelete, 
-  MdLock 
+  MdDelete,
+  MdLock,
+  MdCheck
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { deconnexion, getAllUsers, verifierAuthentification, newUser, updateUserForAdmin, deleteUser, toggleStatutUser } from "../../fonctions/Utilisateur.jsx";
@@ -63,7 +64,7 @@ const DashboardAdminUser = () => {
     setFormData({
       nom: "", prenom: "", sexe: "M", email: "", contact: "",
       role: "admin", mdp: "",
-      grade: "", statut: "permanent", departement: "", tauxh: ""
+      grade: "", statut: "permanent", departement: [], tauxh: ""
     });
     setFormMode("add");
     setFormOpen(true);
@@ -80,7 +81,7 @@ const DashboardAdminUser = () => {
       mdp: "",
       grade: item.grade ?? "", 
       statut: item.statut ?? "permanent", 
-      departement: item.departement ?? "", 
+      departement: Array.isArray(item.departement) ? item.departement : (item.departement ? item.departement.split(", ") : []), 
       tauxh: item.tauxh ?? ""
     });
     setFormMode("edit");
@@ -101,7 +102,7 @@ const DashboardAdminUser = () => {
       ...(formData.role === "enseignant" && {
         grade: formData.grade,
         statut: formData.statut,
-        departement: formData.departement,
+        departement: formData.departement.join(", "),
         tauxh: parseFloat(formData.tauxh)
       })
     };
@@ -163,6 +164,42 @@ const DashboardAdminUser = () => {
   const totalUsersKPI = totalUtilisateurs ?? "...";
   const teachersCount = totalParRole.find(r => r.role === "enseignant")?.total ?? 0;
   const inactifCount = totalParStat?.total_inactifs ?? "...";
+
+  const DEPARTEMENTS = [
+    "Informatique",
+    "Droit",
+    "Économie",
+    "Gestion",
+    "Français",
+    "Sciences & Technologies",
+    "Marketing"
+  ];
+
+  const GRADES = [
+    "Assistant",
+    "Maître-Assistant",
+    "Professeur",
+    "Professeur Titulaire",
+    "Maître de Conférences"
+  ];
+
+  const toggleDept = (dept) => {
+    if (formData.departement.includes(dept)) {
+      setFormData({
+        ...formData,
+        departement: formData.departement.filter((d) => d !== dept),
+      });
+    } else {
+      if (formData.departement.length >= 6) {
+        toast.error("Vous ne pouvez pas sélectionner plus de 6 départements.");
+        return;
+      }
+      setFormData({
+        ...formData,
+        departement: [...formData.departement, dept],
+      });
+    }
+  };
 
   const handleActionClick = (item) => {
     setSelectedItem(item);
@@ -509,9 +546,16 @@ const DashboardAdminUser = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[#7A8FAD] text-[12px]">Grade</label>
-                          <input value={formData.grade} onChange={e => setFormData({...formData, grade: e.target.value})}
-                            placeholder="Ex: Maître de conférence"
-                            className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                          <select 
+                            value={formData.grade} 
+                            onChange={e => setFormData({...formData, grade: e.target.value})}
+                            className="bg-[#0A1628] border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none cursor-pointer focus:border-[#0097FB] transition-colors"
+                          >
+                            <option value="" disabled>Sélectionner un grade</option>
+                            {GRADES.map(g => (
+                              <option key={g} value={g}>{g}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[#7A8FAD] text-[12px]">Statut</label>
@@ -523,11 +567,32 @@ const DashboardAdminUser = () => {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[#7A8FAD] text-[12px]">Département</label>
-                          <input value={formData.departement} onChange={e => setFormData({...formData, departement: e.target.value})}
-                            placeholder="Ex: Informatique"
-                            className="bg-white/5 border border-white/10 rounded-lg py-2.5 px-3 text-[13px] outline-none focus:border-[#0097FB] transition-colors" />
+                        <div className="flex flex-col gap-2.5 col-span-2">
+                          <div className="flex items-baseline gap-2">
+                            <label className="text-[#7A8FAD] text-[12px]">Département(s)</label>
+                            <span className="text-[10px] text-[#7A8FAD]">(max. 6)</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {DEPARTEMENTS.map((dept) => {
+                              const isSelected = formData.departement.includes(dept);
+                              return (
+                                <div
+                                  key={dept}
+                                  onClick={() => toggleDept(dept)}
+                                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border transition-all cursor-pointer select-none
+                                    ${isSelected 
+                                      ? "border-[#0097FB]/50 bg-[#0097FB]/10" 
+                                      : "bg-white/5 hover:bg-white/[0.08] border-white/10"}`}
+                                >
+                                  <div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-all
+                                    ${isSelected ? "bg-[#0097FB] border-[#0097FB]" : "border-white/20 bg-transparent"}`}>
+                                    {isSelected && <MdCheck className="text-white text-xs" />}
+                                  </div>
+                                  <span className="text-[13px] text-white">{dept}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[#7A8FAD] text-[12px]">Taux horaire (FCFA)</label>
