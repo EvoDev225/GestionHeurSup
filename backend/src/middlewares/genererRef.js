@@ -2,7 +2,6 @@
 const genererRef = async (role, db) => {
     let prefix;
     let table;
-
     switch (role) {
         case 'admin':
             prefix = 'ADM';

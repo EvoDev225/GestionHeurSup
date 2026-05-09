@@ -70,7 +70,7 @@ const newUser = async (req,res)=>{
             const [rows2]= await db.query(`INSERT INTO administrateur (reference,idutil) VALUES (?,?)`,[refAdmin,idUser])
                 await logAction("INSERT", `Ajout de l'administrateur ${nom} ${prenom}`, db)
                 return res.status(201).json({message:"Administrateur  ajouté avec succès",data:rows,data_admin:rows2})
-        } catch (error) {
+        } catch (error){
             return res.status(500).json({message:error.message})
         }
     }
@@ -140,9 +140,9 @@ const updateUserForAdmin = async (req, res) => {
         const [rows2]= await db.query(`
             UPDATE enseignant SET grade=?, statut=?, departement=?, tauxh=?
             WHERE enseignant.idutil=?`,[grade,statut,departement,tauxh,id])
-        await logAction("UPDATE", `Mise à jour de l'utilisateur id ${id}`, db)
+        await logAction("UPDATE",`Mise à jour de l'utilisateur id ${id}`, db)
         return res.status(200).json({ message: "Les informations ont été mises à jour avec succès", data: rows, data_ens: rows2 });
-    } catch (error) {
+    } catch (error){
         return res.status(500).json({ message: error.message });
     }
 }

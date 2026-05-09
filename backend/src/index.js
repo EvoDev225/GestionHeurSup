@@ -15,6 +15,7 @@ const journalRoutes = require('./routes/routeJournal') // ← importer les route
 const statsRoutes = require('./routes/routeStats') // ← importer les routes statistiques
 // Document
 const exportRoutes = require('./routes/routeExport') // ← importer les routes d'exportation de documents
+const importRoutes = require('./routes/importRoutes'); // ← importer les routes d'importation Excel
 app.use(cors({origin: 'http://localhost:5173', credentials: true})) // ← autoriser les requêtes du frontend avec les cookies
 app.use(express.json())
 app.use(cookie_parser())
@@ -29,8 +30,10 @@ app.use("/enseigner",enseignerRoutes)
 app.use("/journal",journalRoutes)
 app.use("/stats", statsRoutes)
 app.use("/export", exportRoutes)
+app.use("/api/import", importRoutes)
+app.use("/api/import", importRoutes)
 
-// ← utiliser la fonction de génération de référence pour tester
+
 
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur http://localhost:${PORT}`)
