@@ -7,7 +7,8 @@ import {
   MdPerson, MdAssessment, MdAccountBalance, MdGridOn, 
   MdPictureAsPdf, MdTableChart, MdHistory, MdDeleteSweep, 
   MdDescription, MdDownload, MdCheckCircle, MdError, 
-  MdHourglassEmpty 
+  MdHourglassEmpty,
+  MdUploadFile
 } from "react-icons/md";
 import { 
   exportFicheEnseignantPDF,
@@ -19,17 +20,11 @@ import {
 import { getAllEnseignant, deconnexion, verifierAuthentification } from "../../fonctions/Utilisateur.jsx";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import ImportModal from '../ImportModal.jsx';
 
 const mois = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const annees = ["2023-2024", "2024-2025", "2025-2026"];
 
-const historiqueExports = [
-  { id: 1, document: "Fiche individuelle — Jean François", format: "PDF", date: "28/03/2026", heure: "14:55", statut: "Succès" },
-  { id: 2, document: "État global des heures — Mars 2026", format: "Excel", date: "27/03/2026", heure: "10:12", statut: "Succès" },
-  { id: 3, document: "État pour la comptabilité — Fév 2026", format: "PDF", date: "25/03/2026", heure: "09:30", statut: "Succès" },
-  { id: 4, document: "Export Excel — Tous les enseignants", format: "Excel", date: "20/03/2026", heure: "16:45", statut: "Succès" },
-  { id: 5, document: "Fiche individuelle — Moro Isaac", format: "PDF", date: "18/03/2026", heure: "11:20", statut: "Échec" },
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -49,6 +44,7 @@ const DashboardAdminExports = () => {
   const [enseignants, setEnseignants] = useState([]);
   const [selectedEnseignant, setEnseignant] = useState(""); // idens de l'enseignant sélectionné
   const [loadingId, setLoadingId] = useState(null);
+  const [importType, setImportType] = useState(null);
 
   const simulerExport = (id, format, nom) => {
     const uniqueId = id + format;
@@ -332,7 +328,21 @@ const DashboardAdminExports = () => {
           </motion.div>
         </div>
 
-        
+        {/* SECTION IMPORT EXCEL */}
+        <motion.div variants={itemVariants} className="bg-[#0D1B2A] border border-white/5 p-6 rounded-[14px] mb-7 shadow-sm">
+          <div className="flex items-center gap-2 mb-5">
+            <MdUploadFile className="text-[#0097FB] text-[18px]" />
+            <h2 className="text-[15px] font-semibold">Import Excel</h2>
+          </div>
+          <p className="text-[#7A8FAD] text-[13px] mb-5">Importez des fichiers .xlsx pour mettre à jour les données directement en base.</p>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => setImportType('enseignant')} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border bg-[#0097FB]/10 text-[#0097FB] border-[#0097FB]/20 hover:bg-[#0097FB]/20 transition-all cursor-pointer">📥 Importer Enseignants</button>
+            
+            <button onClick={() => setImportType('matiere')} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border bg-[#0097FB]/10 text-[#0097FB] border-[#0097FB]/20 hover:bg-[#0097FB]/20 transition-all cursor-pointer">📥 Importer Matières</button>
+          </div>
+        </motion.div>
+
+        {importType && <ImportModal type={importType} onClose={() => setImportType(null)} />}
       </motion.main>
     </div>
   );

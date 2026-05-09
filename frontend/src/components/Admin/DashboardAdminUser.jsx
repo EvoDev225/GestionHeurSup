@@ -207,7 +207,7 @@ const DashboardAdminUser = () => {
   };
 
   const getInitials = (nom, prenom) => `${nom.charAt(0)}${prenom.charAt(0)}`.toUpperCase();
- useEffect(() => {
+useEffect(() => {
       const fetchUserData = async () => {
         try {
           const res = await verifierAuthentification();
@@ -217,7 +217,6 @@ const DashboardAdminUser = () => {
             await deconnexion()
             navigate('/')
           }
-          
         } catch (error) {
           navigate("/")
           toast.error("Une erreur est survenue lors de la vérification de l'authentification.");
@@ -246,7 +245,7 @@ const DashboardAdminUser = () => {
   return (
     <div className="min-h-screen bg-[#000814]">
       <SidebarAdmin isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} role="admin" />
-      <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}/>
 
       <motion.main 
         initial="hidden"

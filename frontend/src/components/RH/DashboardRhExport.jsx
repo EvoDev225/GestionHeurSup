@@ -19,7 +19,8 @@ import {
   MdCheckCircle,
   MdError,
   MdRefresh,
-  MdSearchOff
+  MdSearchOff,
+  MdUploadFile
 } from 'react-icons/md';
 
 
@@ -31,6 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRecapEnseignants } from '../../fonctions/Stats.jsx';
 import { exportFicheEnseignantPDF } from '../../fonctions/Export';
 import toast from 'react-hot-toast';
+import ImportModal from '../ImportModal.jsx';
 
 const moisOptions = [
   "Mars 2026", "Février 2026", "Janvier 2026",
@@ -58,6 +60,7 @@ const DashboardRhExport = () => {
 
   // Export
   const [exportingId, setExportingId] = useState(null);
+  const [importType, setImportType] = useState(null);
 
   const formatHeures = (valeur) => {
     const total = parseFloat(valeur || 0);
@@ -351,7 +354,26 @@ const DashboardRhExport = () => {
           </div>
         </div>
 
-        
+        {/* SECTION 4 — IMPORT EXCEL */}
+        <div className="bg-[#0D1B2A] border border-white/5 p-5 rounded-xl shadow-sm mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MdUploadFile className="text-[#0097FB]" size={18} />
+            <h2 className="text-white text-[15px] font-semibold">Import Excel</h2>
+          </div>
+          <p className="text-[#7A8FAD] text-[13px] mb-4">
+            Importez des fichiers .xlsx pour mettre à jour les données directement en base.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            
+            <div onClick={() => setImportType('enseigner')} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium border bg-[#7B2FBE]/10 text-[#7B2FBE] border-[#7B2FBE]/20 hover:bg-[#7B2FBE]/20 transition-all cursor-pointer">
+              <MdUploadFile size={16} /> Importer Séances
+            </div>
+            
+          </div>
+        </div>
+
+        {importType && <ImportModal type={importType} onClose={() => setImportType(null)} />}
+
         </>
         )}
       </main>
